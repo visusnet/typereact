@@ -1,5 +1,41 @@
-@import '../../assets/styles/colors';
-@import '../../assets/styles/mixins';
+$black2: #F7F7F7;
+$black5: #F2F2F2;
+$black10: #E5E5E5;
+$black20: #CCCCCC;
+$black40: #999999;
+$black60: #666666;
+$black80: #333333;
+$white: #FFFFFF;
+$pacific: #006EB8;
+
+$inputColor: $black80;
+$inputBorderColor: $black20;
+$inputDisabledBackgroundColor: $black5;
+$inputDisabledColor: $black40;
+$inputFocusBorderColor: mix($pacific, $white, 50%);
+$inputBackgroundColor: $white;
+$shadowColor: $black20;
+$optionHighlightColor: $black2;
+$optionHoverColor: $black5;
+$keywordColor: $black60;
+$groupColor: $black40;
+$separatorColor: $black20;
+
+@mixin regular-font($fontSize, $lineHeight) {
+    font-family: 'Open Sans', sans-serif;
+    font-weight: 400;
+    font-style: normal;
+    font-size: $fontSize;
+    line-height: $lineHeight;
+}
+
+@mixin semibold-font($fontSize, $lineHeight) {
+    font-family: 'Open Sans', sans-serif;
+    font-weight: 600;
+    font-style: normal;
+    font-size: $fontSize;
+    line-height: $lineHeight;
+}
 
 .typeahead {
     position: relative;
@@ -55,22 +91,22 @@
         cursor: pointer;
 
         &[data-highlighted=true] {
-            background: $typeaheadOptionHighlight;
+            background: $optionHighlightColor;
         }
 
         &:hover {
-            background: $typeaheadOptionHover;
+            background: $optionHoverColor;
         }
 
         &__new_option {
-            color: $typeaheadKeywordColor;
+            color: $keywordColor;
         }
     }
 
     &__no_options {
         position: relative;
         @include regular-font(14px, 28px);
-        color: $typeaheadKeywordColor;
+        color: $keywordColor;
         padding: 0 12px;
         text-overflow: ellipsis;
 
@@ -81,7 +117,7 @@
 
     &__group {
         @include semibold-font(12px, 28px);
-        color: $typeaheadGroupColor;
+        color: $groupColor;
 
         &__label {
             padding: 0 12px;
@@ -89,7 +125,7 @@
 
         &:not(:first-of-type) {
             margin-top: 15px;
-            border-top: 1px solid $typeaheadSeparator;
+            border-top: 1px solid $separatorColor;
             padding-top: 16px;
         }
     }

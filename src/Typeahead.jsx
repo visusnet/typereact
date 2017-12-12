@@ -2,8 +2,6 @@ import React, {Component} from 'react';
 import * as PropTypes from 'prop-types';
 import scrollIntoView from 'dom-scroll-into-view';
 
-import './Typeahead.css';
-
 const DEFAULT_VALUE = undefined;
 const DEFAULT_LABEL = '';
 const KEY_ENTER = 13;
