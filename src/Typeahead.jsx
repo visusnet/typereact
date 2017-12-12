@@ -17,6 +17,7 @@ export default class Typeahead extends Component {
             label: PropTypes.string.isRequired,
             value: PropTypes.any.isRequired
         })),
+        id: PropTypes.string,
         isClearable: PropTypes.bool,
         isDisabled: PropTypes.bool,
         onBlur: PropTypes.func,
@@ -34,6 +35,7 @@ export default class Typeahead extends Component {
         allowUnknownValue: false,
         autoSelectSingleOption: false,
         groups: undefined,
+        id: undefined,
         isClearable: false,
         isDisabled: false,
         onBlur: () => {},
@@ -419,9 +421,11 @@ export default class Typeahead extends Component {
     }
 
     render() {
+        const idProp = this.props.id ? {id: this.props.id} : {};
         return (
             <div className="typeahead">
                 <input
+                    {...idProp}
                     disabled={this.props.isDisabled}
                     name={this.props.fieldName}
                     onFocus={this._handleFocus}
