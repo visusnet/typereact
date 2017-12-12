@@ -1,0 +1,112 @@
+@import '../../assets/styles/colors';
+@import '../../assets/styles/mixins';
+
+.typeahead {
+    position: relative;
+
+    input {
+        @include regular-font(14px, 30px);
+        background-image: url('./icons/arrow-down.svg');
+        background-size: 12px;
+        background-repeat: no-repeat;
+        background-position: calc(100% - 10px) 10px;
+        box-sizing: border-box;
+        width: 100%;
+        min-width: 120px;
+        color: $inputColor;
+        text-overflow: ellipsis;
+        padding: 0 24px 0 12px;
+        border: 1px solid $inputBorderColor;
+
+        &:disabled {
+            background-color: $inputDisabledBackgroundColor;
+            color: $inputDisabledColor;
+        }
+
+        &:focus {
+            outline: 1px solid $inputFocusBorderColor;
+            border: 1px solid $inputFocusBorderColor;
+            outline-offset: 0;
+        }
+    }
+
+    &__options {
+        position: absolute;
+        background-color: $inputBackgroundColor;
+        box-shadow: 0 1px 4px 0 $shadowColor;
+        border: 1px solid $shadowColor;
+        border-top: 0;
+        top: 33px;
+        left: 0;
+        overflow-y: auto;
+        max-height: 300px;
+        z-index: 10;
+        min-width: calc(100% - 2px);
+        max-width: 100%;
+        padding: 16px 0 24px;
+    }
+
+    &__option {
+        @include regular-font(14px, 28px);
+        color: $inputColor;
+        padding: 0 12px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        cursor: pointer;
+
+        &[data-highlighted=true] {
+            background: $typeaheadOptionHighlight;
+        }
+
+        &:hover {
+            background: $typeaheadOptionHover;
+        }
+
+        &__new_option {
+            color: $typeaheadKeywordColor;
+        }
+    }
+
+    &__no_options {
+        position: relative;
+        @include regular-font(14px, 28px);
+        color: $typeaheadKeywordColor;
+        padding: 0 12px;
+        text-overflow: ellipsis;
+
+        &__keyword {
+            color: $inputColor;
+        }
+    }
+
+    &__group {
+        @include semibold-font(12px, 28px);
+        color: $typeaheadGroupColor;
+
+        &__label {
+            padding: 0 12px;
+        }
+
+        &:not(:first-of-type) {
+            margin-top: 15px;
+            border-top: 1px solid $typeaheadSeparator;
+            padding-top: 16px;
+        }
+    }
+
+    &__clear {
+        position: absolute;
+        width: 32px;
+        height: 32px;
+        right: 22px;
+        top: 0;
+        background: url("icons/clear.svg");
+        background-repeat: no-repeat;
+        background-position: center center;
+        background-size: 8px;
+
+        &:active {
+            outline: 0;
+        }
+    }
+}
