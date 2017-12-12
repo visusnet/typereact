@@ -140,7 +140,9 @@ export default class Typeahead extends Component {
         }, afterValueUpdated);
     };
 
-    _createHandleMouseDown = (value, highlightedIndex) => () => {
+    _createHandleMouseDown = (value, highlightedIndex) => (e) => {
+        e.stopPropagation();
+        e.preventDefault();
         const previousValue = this.state.value;
         this.setState({
             highlightedIndex,
@@ -177,8 +179,8 @@ export default class Typeahead extends Component {
         return this.state.options[this.state.highlightedIndex].value;
     };
 
-    _getInitialIndex = () => {
-        const {options, value} = this.props;
+    _getInitialIndex = (props) => {
+        const {options, value} = props;
         const currentOptionIndex = options.findIndex(opt => opt.value === value);
         return currentOptionIndex === -1 ? undefined : currentOptionIndex;
     };
@@ -290,7 +292,7 @@ export default class Typeahead extends Component {
         const sortedOptions = groups === undefined ? options : this._sortOptionsByGroup(options);
         this.setState({
             options: sortedOptions,
-            highlightedIndex: this._getInitialIndex(),
+            highlightedIndex: this._getInitialIndex(props),
             value,
             typedLabel: this._getLabelByValue(value)
         }, () => {

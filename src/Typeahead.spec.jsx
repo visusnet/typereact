@@ -413,6 +413,46 @@ describe('Typeahead should', () => {
         expect(handleChange.mock.calls[1][1]).toEqual('value1');
     });
 
+    it('call onChange and onBlur with new value when value is changed by clicking and blurring', () => {
+        const handleChange = jest.fn();
+        const handleBlur = jest.fn();
+        const wrapper = mount(
+            <Typeahead fieldName="fieldName" options={options} onChange={handleChange} onBlur={handleBlur}/>
+        );
+        wrapper.find('input').simulate('focus');
+        const value2Option = wrapper.find('.typeahead__option[data-value="value2"]');
+        value2Option.simulate('mouseDown');
+        wrapper.find('input').simulate('blur');
+        expect(handleChange.mock.calls.length).toBe(1);
+        expect(handleChange.mock.calls[0][1]).toEqual('value2');
+        expect(handleBlur.mock.calls.length).toBe(1);
+        expect(handleBlur.mock.calls[0][1]).toEqual('value2');
+    });
+
+    it('call onChange and onBlur with new value when value is changed by clicking and blurring repeatedly', () => {
+        const handleChange = jest.fn();
+        const handleBlur = jest.fn();
+        const wrapper = mount(
+            <Typeahead fieldName="fieldName" options={options} onChange={handleChange} onBlur={handleBlur}/>
+        );
+        wrapper.find('input').simulate('focus');
+        const value2Option = wrapper.find('.typeahead__option[data-value="value2"]');
+        value2Option.simulate('mouseDown');
+        wrapper.setProps({value: 'value2'});
+        wrapper.update();
+        wrapper.find('input').simulate('focus');
+        const value1Option = wrapper.find('.typeahead__option[data-value="value1"]');
+        value1Option.simulate('mouseDown');
+        wrapper.find('input').simulate('blur');
+        wrapper.find('input').simulate('blur');
+        expect(handleChange.mock.calls.length).toBe(2);
+        expect(handleChange.mock.calls[0][1]).toEqual('value2');
+        expect(handleChange.mock.calls[1][1]).toEqual('value1');
+        expect(handleBlur.mock.calls.length).toBe(2);
+        expect(handleBlur.mock.calls[0][1]).toEqual('value1');
+        expect(handleBlur.mock.calls[1][1]).toEqual('value1');
+    });
+
     it('set new label when value is changed by clicking', () => {
         const wrapper = mount(
             <Typeahead fieldName="fieldName" options={options}/>
