@@ -693,6 +693,14 @@ describe('Typeahead should', () => {
         wrapper.find('input').simulate('blur');
     });
 
+    it('select correct option when value is set before options (due to race condition)', () => {
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={[]} value="myVal"/>);
+        const typeahead = wrapper.instance();
+        expect(typeahead.state.typedLabel).toEqual(''); // label cannot be set, no options available
+        typeahead.componentWillReceiveProps({...typeahead.props, options: [{value: 'myVal', label: 'somethingElse'}]});
+        expect(typeahead.state.typedLabel).toEqual('somethingElse'); // label can now be set appropriately
+    });
+
     function simulateKeyPresses(wrapper, text) {
         for (let i = 0; i < text.length; i++) {
             wrapper.simulate('keyPress', {
