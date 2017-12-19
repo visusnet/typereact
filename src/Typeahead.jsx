@@ -247,8 +247,8 @@ export default class Typeahead extends Component {
         return options;
     };
 
-    _getLabelByValue = (value) => {
-        const option = this.props.options.find(opt => opt.value === value);
+    _getLabelByValue = (value, options = this.props.options) => {
+        const option = options.find(opt => opt.value === value);
         if (option) {
             return option.label;
         } else if (this.props.allowUnknownValue && value !== undefined) {
@@ -294,7 +294,7 @@ export default class Typeahead extends Component {
             options: sortedOptions,
             highlightedIndex: this._getInitialIndex(props),
             value,
-            typedLabel: this._getLabelByValue(value)
+            typedLabel: this._getLabelByValue(value, sortedOptions)
         }, () => {
             if (props.autoSelectSingleOption && options.length === 1) {
                 const valueOfSingleOption = options[0].value;
