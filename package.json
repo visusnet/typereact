@@ -1,6 +1,6 @@
 {
   "name": "typereact",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "main": "dist/index.js",
   "repository": "https://github.com/visusnet/react-typeahead.git",
   "author": "Alexander Müller <alexander.mueller@codecentric.de>",
