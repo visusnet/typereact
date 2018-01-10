@@ -686,11 +686,19 @@ describe('Typeahead should', () => {
         expect(wrapper.state('value')).toEqual('value2');
     });
 
-    it('not crash when options are filtered and an outside click occurs', () => {
-        const wrapper = mount(<Typeahead fieldName="fieldName" options={options}/>);
+    it('not crash when options are filtered and an outside click occurs', done => {
+        const handleBlur = () => done();
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={options} onBlur={handleBlur}/>);
         wrapper.find('input').simulate('focus');
         simulateKeyPresses(wrapper.find('input'), 'bel2');
         wrapper.find('input').simulate('blur');
+    });
+
+    it('not crash when options are filtered and arrow key up is pressed', () => {
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={options}/>);
+        wrapper.find('input').simulate('focus');
+        simulateKeyPresses(wrapper.find('input'), 'bel2');
+        wrapper.find('input').simulate('keyDown', {keyCode: KEY_UP});
     });
 
     it('select correct option when value is set before options (due to race condition)', () => {

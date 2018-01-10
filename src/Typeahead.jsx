@@ -92,7 +92,7 @@ export default class Typeahead extends Component {
     };
 
     _getHighlightedIndexByTypedLabel = () => {
-        return this.state.options.findIndex(this._byTypedLabel);
+        return this._getFilteredOptions().findIndex(this._byTypedLabel);
     };
 
     _handleKeyDown = (e) => {
@@ -176,7 +176,8 @@ export default class Typeahead extends Component {
         if (this.state.highlightedIndex === -1) {
             return undefined;
         }
-        return this.state.options[this.state.highlightedIndex].value;
+        const filteredOptions = this._getFilteredOptions();
+        return filteredOptions[this.state.highlightedIndex].value;
     };
 
     _getInitialIndex = (props) => {
@@ -310,11 +311,16 @@ export default class Typeahead extends Component {
     _isUnknownValue = () => this.state.typedLabel !== '' &&
         this._getFilteredOptions().findIndex(option => option.label === this.state.typedLabel) === -1;
 
-    _getIndex = option => this.state.options.findIndex(opt => opt.value === option.value);
+    _getAbsoluteIndex = option => this.state.options.findIndex(opt => opt.value === option.value);
+
+    _relativeToAbsoluteIndex = (relativeIndex) => {
+        const highlightedOption = this._getFilteredOptions()[relativeIndex];
+        return this.state.options.indexOf(highlightedOption);
+    };
 
     _scrollHighlightedOptionIntoView = () => {
-        if (this.state.isOpen && this.state.highlightedIndex !== undefined) {
-            const optionNode = this.elementRefs[`option_${this.state.highlightedIndex}`];
+        if (this.state.isOpen && this.state.highlightedIndex !== undefined && this.state.highlightedIndex !== -1) {
+            const optionNode = this.elementRefs[`option_${this._relativeToAbsoluteIndex(this.state.highlightedIndex)}`];
             const menuNode = this.elementRefs['menu'];
             scrollIntoView(optionNode, menuNode, {onlyScrollIfNeeded: true});
         }
@@ -359,18 +365,18 @@ export default class Typeahead extends Component {
         return (<span className="typeahead__option__new_option"> (+) </span>);
     }
 
-    renderOption = (option, index) => {
+    renderOption = (option, absoluteIndex) => {
         return (
-            <div ref={element => this.elementRefs[`option_${index}`] = element}
+            <div ref={element => this.elementRefs[`option_${absoluteIndex}`] = element}
                 key={`typeahead__option__${option.value}`}
                 className="typeahead__option"
-                data-index={index}
+                data-index={absoluteIndex}
                 data-value={option.value}
-                data-highlighted={index === this.state.highlightedIndex}
+                data-highlighted={absoluteIndex === this._relativeToAbsoluteIndex(this.state.highlightedIndex)}
                 data-group={option.group}
-                onMouseDown={this._createHandleMouseDown(option.value, index)}>
+                onMouseDown={this._createHandleMouseDown(option.value, absoluteIndex)}>
                 {option.label}
-                {index === -1 ? this.renderNewOptionMarker() : null}
+                {absoluteIndex === -1 ? this.renderNewOptionMarker() : null}
             </div>
         );
     };
@@ -386,7 +392,7 @@ export default class Typeahead extends Component {
         return (
             <div key={`typeahead__group__${group.value}`} className="typeahead__group" data-value={group.value}>
                 <div className="typeahead__group__label">{group.label}</div>
-                {groupOptions.map(option => this.renderOption(option, this._getIndex(option)))}
+                {groupOptions.map(option => this.renderOption(option, this._getAbsoluteIndex(option)))}
             </div>
         );
     };
@@ -402,7 +408,7 @@ export default class Typeahead extends Component {
                     {this.renderNoOptionsMessage()}
                     {this.renderUnknownValueOption()}
                     {this.props.groups === undefined ? this._getFilteredOptions().map(
-                        option => this.renderOption(option, this._getIndex(option))) :
+                        option => this.renderOption(option, this._getAbsoluteIndex(option))) :
                         this.renderGroups()}
                 </div>
             );
