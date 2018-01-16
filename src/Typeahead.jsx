@@ -127,17 +127,22 @@ export default class Typeahead extends Component {
     };
 
     _updateValue = (afterValueUpdated) => {
-        const previousValue = this.state.value;
-        const valueOfHighlightedOption = this._getValueOfHighlightedOption();
-        const isUnknownValue = valueOfHighlightedOption === undefined;
-        const isUnknownValueAndAllowed = isUnknownValue && this.props.allowUnknownValue;
-        const nextValue = isUnknownValueAndAllowed ? this.state.typedLabel :
-            isUnknownValue ? previousValue : valueOfHighlightedOption;
-        this.setState({
-            isOpen: false,
-            value: nextValue,
-            typedLabel: this._getLabelByValue(nextValue)
-        }, afterValueUpdated);
+        const shouldUpdateValue = !this.state.isOpen;
+        if (shouldUpdateValue) {
+            afterValueUpdated();
+        } else {
+            const previousValue = this.state.value;
+            const valueOfHighlightedOption = this._getValueOfHighlightedOption();
+            const isUnknownValue = valueOfHighlightedOption === undefined;
+            const isUnknownValueAndAllowed = isUnknownValue && this.props.allowUnknownValue;
+            const nextValue = isUnknownValueAndAllowed ? this.state.typedLabel :
+                isUnknownValue ? previousValue : valueOfHighlightedOption;
+            this.setState({
+                isOpen: false,
+                value: nextValue,
+                typedLabel: this._getLabelByValue(nextValue)
+            }, afterValueUpdated);
+        }
     };
 
     _createHandleMouseDown = (value, highlightedIndex) => (e) => {
@@ -167,17 +172,18 @@ export default class Typeahead extends Component {
     };
 
     _getValueOfHighlightedOption = () => {
-        if (this.state.highlightedIndex === undefined) {
+        const highlightedIndex = this.state.highlightedIndex;
+        if (highlightedIndex === undefined) {
             return DEFAULT_VALUE;
         }
-        if (this.props.allowUnknownValue && this.state.highlightedIndex === -1) {
+        if (this.props.allowUnknownValue && highlightedIndex === -1) {
             return this.state.typedLabel;
         }
-        if (this.state.highlightedIndex === -1) {
+        if (highlightedIndex === -1) {
             return undefined;
         }
         const filteredOptions = this._getFilteredOptions();
-        return filteredOptions[this.state.highlightedIndex].value;
+        return filteredOptions[highlightedIndex].value;
     };
 
     _getInitialIndex = (props) => {

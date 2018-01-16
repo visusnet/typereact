@@ -13,7 +13,9 @@ const KEY_DOWN = 40;
 
 const options = [
     {label: 'label1', value: 'value1'},
-    {label: 'label2', value: 'value2'}
+    {label: 'label2', value: 'value2'},
+    {label: 'special1', value: 'value3'},
+    {label: 'special2', value: 'value4'}
 ];
 
 const option = {
@@ -291,6 +293,20 @@ describe('Typeahead should', () => {
         expect(handleChange.mock.calls.length).toBe(1);
         expect(handleChange.mock.calls[0][0]).toBe('fieldName');
         expect(handleChange.mock.calls[0][1]).toBe('value1');
+    });
+
+    it('call onBlur prop with fieldName and value when value is set using arrow keys with filtered options, ' +
+        'pressing enter and losing focus', () => {
+        const handleBlur = jest.fn();
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={options} onBlur={handleBlur}/>);
+        wrapper.find('input').simulate('focus');
+        simulateKeyPresses(wrapper.find('input'), 'special');
+        wrapper.find('input').simulate('keyDown', {keyCode: KEY_DOWN});
+        wrapper.find('input').simulate('keyDown', {keyCode: KEY_ENTER});
+        wrapper.find('input').simulate('blur');
+        expect(handleBlur.mock.calls.length).toBe(1);
+        expect(handleBlur.mock.calls[0][0]).toBe('fieldName');
+        expect(handleBlur.mock.calls[0][1]).toBe('value4');
     });
 
     it('call onChange prop with fieldName and value when value is set using arrow keys and losing focus', () => {
