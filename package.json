@@ -13,12 +13,12 @@
   },
   "dependencies": {
     "dom-scroll-into-view": "^1.2.1",
-    "jest": "^22.1.4",
     "prop-types": "^15.6.0",
     "react": "^16.2.0",
     "react-dom": "^16.2.0"
   },
   "devDependencies": {
+    "jest": "^22.1.4",
     "@types/jest": "^21.1.10",
     "@types/react": "^16.0.35",
     "@types/react-dom": "^16.0.1",
