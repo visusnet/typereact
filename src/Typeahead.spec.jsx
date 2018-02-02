@@ -231,6 +231,19 @@ describe('Typeahead should', () => {
         expect(wrapper.state('value')).toEqual('value2');
     });
 
+    it('not do anything when enter is pressed and the menu is closed', () => {
+        const handleBlur = jest.fn();
+        const handleChange = jest.fn();
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={options} onBlur={handleBlur}
+            onChange={handleChange}/>);
+        wrapper.find('input').simulate('focus');
+        wrapper.find('input').simulate('keyDown', {keyCode: KEY_ENTER});
+        wrapper.find('input').simulate('keyDown', {keyCode: KEY_ENTER});
+        expect(wrapper.state('value')).toEqual(undefined);
+        expect(handleBlur.mock.calls).toHaveLength(0);
+        expect(handleChange.mock.calls).toHaveLength(0);
+    });
+
     it('update value to highlighted option after highlight changes when tab is pressed and focus is lost', () => {
         const wrapper = mount(<Typeahead fieldName="fieldName" options={options}/>);
         wrapper.find('input').simulate('focus');
@@ -769,6 +782,15 @@ describe('Typeahead should', () => {
         expect(wrapper.state('typedLabel')).toEqual('somethingElse'); // label can now be set appropriately
     });
 
+    it('select last option more key down is pressed more often than options exist', () => {
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={options}/>);
+        for (let keyPressCount = 0; keyPressCount <= options.length + 5; keyPressCount++) {
+            wrapper.find('input').simulate('keyDown', {keyCode: KEY_DOWN});
+        }
+        wrapper.find('input').simulate('blur');
+        expect(wrapper.state('value')).toEqual('value4');
+    });
+
     it('throw an error if groups are enabled but at least one option does not specify its group', () => {
         try {
             shallow(<Typeahead fieldName="fieldName" groups={groups} options={options}/>);
@@ -787,6 +809,7 @@ describe('Typeahead should', () => {
     });
 
     function simulateKeys(wrapper, text) {
+        const input = wrapper.find('input');
         for (let i = 0; i < text.length; i++) {
             const charCode = text.charCodeAt(i);
             const keyEvent = {
@@ -794,10 +817,10 @@ describe('Typeahead should', () => {
                 key: text[i],
                 keyCode: charCode
             };
-            wrapper.simulate('keyDown', keyEvent);
-            wrapper.simulate('keyPress', keyEvent);
-            wrapper.simulate('keyUp', keyEvent);
-            wrapper.simulate('change', {
+            input.simulate('keyDown', keyEvent);
+            input.simulate('keyPress', keyEvent);
+            input.simulate('keyUp', keyEvent);
+            input.simulate('change', {
                 target: {
                     value: text.substring(0, i + 1)
                 }
