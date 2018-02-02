@@ -44,7 +44,17 @@ describe('Typeahead should', () => {
         mount(<Typeahead fieldName="fieldName" options={options}/>);
     });
 
-    it('don\' open menu by default', () => {
+    it('render id prop if specified', () => {
+        const wrapper = mount(<Typeahead fieldName="fieldName" id="typeahead"/>);
+        expect(wrapper.find('input[id="typeahead"]')).toHaveLength(1);
+    });
+
+    it('not render id prop when omitted', () => {
+        const wrapper = mount(<Typeahead fieldName="fieldName"/>);
+        expect(wrapper.find('input[id]')).toHaveLength(0);
+    });
+
+    it('not open menu by default', () => {
         const wrapper = mount(<Typeahead fieldName="fieldName" options={options}/>);
 
         expect(wrapper.state('isOpen')).toBe(false);
