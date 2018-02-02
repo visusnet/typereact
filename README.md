@@ -1,6 +1,6 @@
 # Typereact
 
-[![Build Status](https://travis-ci.org/visusnet/typereact.svg?branch=master)](https://travis-ci.org/visusnet/typereact) [![npm version](https://badge.fury.io/js/typereact.svg)](https://badge.fury.io/js/typereact)
+[![Build Status](https://travis-ci.org/visusnet/typereact.svg?branch=master)](https://travis-ci.org/visusnet/typereact) [![npm version](https://badge.fury.io/js/typereact.svg)](https://badge.fury.io/js/typereact) [![Coverage Status](https://coveralls.io/repos/github/visusnet/typereact/badge.svg?branch=master)](https://coveralls.io/github/visusnet/typereact?branch=master)
 
 Typereact is a simple React typeahead component that supports grouped entries.
 
