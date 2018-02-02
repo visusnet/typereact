@@ -204,7 +204,7 @@ describe('Typeahead should', () => {
         expect(Boolean(value1Option.prop('data-highlighted'))).toEqual(true);
     });
 
-    it('don\'t update value to highlighted option when no other key is pressed', () => {
+    it('not update value to highlighted option when no other key is pressed', () => {
         const wrapper = mount(<Typeahead fieldName="fieldName" options={options} value="value1"/>);
         wrapper.find('input').simulate('focus');
         wrapper.find('input').simulate('keyDown', {keyCode: KEY_DOWN});
@@ -561,7 +561,7 @@ describe('Typeahead should', () => {
         expect(wrapper.find('.typeahead__no_options').html()).toContain('nicht gefunden');
     });
 
-    it('don\'t render no found options message when unknown value is entered and allowUnknownValue is true', () => {
+    it('not render no found options message when unknown value is entered and allowUnknownValue is true', () => {
         const wrapper = mount(
             <Typeahead fieldName="fieldName" options={options} allowUnknownValue={true}/>
         );
