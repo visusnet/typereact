@@ -429,7 +429,7 @@ export default class Typeahead extends Component {
     renderClearButton() {
         if (this.props.isClearable && this.state.value) {
             return (
-                <button className="typeahead__clear" href="/#" aria-label="Leeren" onClick={this._handleClearClick}/>
+                <button className="typeahead__clear" href="/#" onClick={this._handleClearClick}/>
             );
         }
     }
