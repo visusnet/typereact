@@ -89,6 +89,15 @@ describe('Typeahead should', () => {
         expect(wrapper.state('isOpen')).toBe(false);
     });
 
+    it('close menu on focus lost with unknown value', () => {
+        const wrapper = mount(<Typeahead fieldName="fieldName" allowUnknownValue={true} options={options}/>);
+        simulateKeys(wrapper.find('input'), 'unknown');
+        wrapper.find('input').simulate('focus');
+        wrapper.find('input').simulate('blur');
+
+        expect(wrapper.state('isOpen')).toBe(false);
+    });
+
     it('accept value from props when value is known from options', () => {
         const wrapper = mount(<Typeahead fieldName="fieldName" options={options} value="value1"/>);
         expect(wrapper.find('input').prop('value')).toEqual('label1');
