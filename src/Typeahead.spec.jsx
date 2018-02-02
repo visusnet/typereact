@@ -800,6 +800,13 @@ describe('Typeahead should', () => {
         expect(wrapper.state('value')).toEqual('value4');
     });
 
+    it('keep selection of allowed unknown option when enter is pressed', () => {
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={options} allowUnknownValue={true} value="unknown"/>);
+        wrapper.find('input').simulate('focus');
+        wrapper.find('input').simulate('keyDown', {keyCode: KEY_ENTER});
+        expect(wrapper.state('value')).toEqual('unknown');
+    });
+
     it('throw an error if groups are enabled but at least one option does not specify its group', () => {
         try {
             shallow(<Typeahead fieldName="fieldName" groups={groups} options={options}/>);
