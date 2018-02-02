@@ -1,6 +1,6 @@
 import 'raf/polyfill';
 import React from 'react';
-import Enzyme, {mount} from 'enzyme';
+import Enzyme, {mount, shallow} from 'enzyme';
 import Adapter from 'enzyme-adapter-react-16';
 import Typeahead from './Typeahead';
 
@@ -53,6 +53,13 @@ describe('Typeahead should', () => {
     it('open menu on focus enter', () => {
         const wrapper = mount(<Typeahead fieldName="fieldName" options={options}/>);
         wrapper.find('input').simulate('focus');
+
+        expect(wrapper.state('isOpen')).toBe(true);
+    });
+
+    it('open menu on any key down', () => {
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={options}/>);
+        wrapper.find('input').simulate('keyDown', {which: 'a'});
 
         expect(wrapper.state('isOpen')).toBe(true);
     });
@@ -133,6 +140,24 @@ describe('Typeahead should', () => {
         expect(Boolean(value1Option.prop('data-highlighted'))).toEqual(true);
     });
 
+    it('highlight first option when no value is set and arrow down key is pressed with groups', function () {
+        const wrapper = mount(<Typeahead fieldName="fieldName" groups={groups} options={optionsWithGroups}/>);
+        wrapper.find('input').simulate('focus');
+        wrapper.find('input').simulate('keyDown', {keyCode: KEY_DOWN});
+        const value1Option = wrapper.find('.typeahead__option[data-value="value1"]');
+        expect(Boolean(value1Option.prop('data-highlighted'))).toEqual(true);
+    });
+
+    it('highlight special option when unknown value is set and arrow up key is pressed', function () {
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={options} allowUnknownValue={true}
+            value="unknown"/>);
+        wrapper.find('input').simulate('focus');
+        wrapper.find('input').simulate('keyDown', {keyCode: KEY_DOWN});
+        wrapper.find('input').simulate('keyDown', {keyCode: KEY_UP});
+        const unknownValueOption = wrapper.find('.typeahead__option[data-value="unknown"]');
+        expect(Boolean(unknownValueOption.prop('data-highlighted'))).toEqual(true);
+    });
+
     it('highlight second option when no value is set and arrow down key is pressed twice', function () {
         const wrapper = mount(<Typeahead fieldName="fieldName" options={options}/>);
         wrapper.find('input').simulate('focus');
@@ -153,7 +178,7 @@ describe('Typeahead should', () => {
     it('filter rendered options when (partial) value is entered', () => {
         const wrapper = mount(<Typeahead fieldName="fieldName" options={options}/>);
         wrapper.find('input').simulate('focus');
-        simulateKeyPresses(wrapper.find('input'), 'label2');
+        simulateKeys(wrapper.find('input'), 'label2');
         const value1Option = wrapper.find('.typeahead__option[data-value="value1"]');
         expect(value1Option.exists()).toBe(false);
         const value2Option = wrapper.find('.typeahead__option[data-value="value2"]');
@@ -163,7 +188,7 @@ describe('Typeahead should', () => {
     it('highlight first filtered option when (partial) value is entered', () => {
         const wrapper = mount(<Typeahead fieldName="fieldName" options={options}/>);
         wrapper.find('input').simulate('focus');
-        simulateKeyPresses(wrapper.find('input'), 'label1');
+        simulateKeys(wrapper.find('input'), 'label1');
         const value1Option = wrapper.find('.typeahead__option[data-value="value1"]');
         expect(value1Option.exists()).toBe(true);
         expect(Boolean(value1Option.prop('data-highlighted'))).toEqual(true);
@@ -300,13 +325,23 @@ describe('Typeahead should', () => {
         const handleBlur = jest.fn();
         const wrapper = mount(<Typeahead fieldName="fieldName" options={options} onBlur={handleBlur}/>);
         wrapper.find('input').simulate('focus');
-        simulateKeyPresses(wrapper.find('input'), 'special');
+        simulateKeys(wrapper.find('input'), 'special');
         wrapper.find('input').simulate('keyDown', {keyCode: KEY_DOWN});
         wrapper.find('input').simulate('keyDown', {keyCode: KEY_ENTER});
         wrapper.find('input').simulate('blur');
         expect(handleBlur.mock.calls.length).toBe(1);
         expect(handleBlur.mock.calls[0][0]).toBe('fieldName');
         expect(handleBlur.mock.calls[0][1]).toBe('value4');
+    });
+
+    it('call onBlur prop with fieldName and undefined as value when unknown value is typed but not allowed', () => {
+        const handleBlur = jest.fn();
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={options} onBlur={handleBlur}/>);
+        simulateKeys(wrapper.find('input'), 'unknown');
+        wrapper.find('input').simulate('blur');
+        expect(handleBlur.mock.calls.length).toBe(1);
+        expect(handleBlur.mock.calls[0][0]).toBe('fieldName');
+        expect(handleBlur.mock.calls[0][1]).toBe(undefined);
     });
 
     it('call onChange prop with fieldName and value when value is set using arrow keys and losing focus', () => {
@@ -337,7 +372,7 @@ describe('Typeahead should', () => {
         const handleChange = jest.fn();
         const wrapper = mount(<Typeahead fieldName="fieldName" options={options} onChange={handleChange}/>);
         wrapper.find('input').simulate('focus');
-        simulateKeyPresses(wrapper.find('input'), 'unknownValue');
+        simulateKeys(wrapper.find('input'), 'unknownValue');
         wrapper.find('input').simulate('keyDown', {keyCode: KEY_TAB});
         expect(handleChange.mock.calls.length).toBe(0);
     });
@@ -348,7 +383,7 @@ describe('Typeahead should', () => {
             <Typeahead fieldName="fieldName" options={options} allowUnknownValue={true} onChange={handleChange}/>
         );
         wrapper.find('input').simulate('focus');
-        simulateKeyPresses(wrapper.find('input'), 'unknownValue');
+        simulateKeys(wrapper.find('input'), 'unknownValue');
         wrapper.find('input').simulate('keyDown', {keyCode: KEY_TAB});
         wrapper.find('input').simulate('blur');
         expect(handleChange.mock.calls.length).toBe(1);
@@ -510,7 +545,7 @@ describe('Typeahead should', () => {
             <Typeahead fieldName="fieldName" options={options}/>
         );
         wrapper.find('input').simulate('focus');
-        simulateKeyPresses(wrapper.find('input'), 'unknownValue');
+        simulateKeys(wrapper.find('input'), 'unknownValue');
         expect(wrapper.find('.typeahead__no_options').exists()).toBe(true);
         expect(wrapper.find('.typeahead__no_options__keyword').text()).toEqual('unknownValue');
         expect(wrapper.find('.typeahead__no_options').html()).toContain('nicht gefunden');
@@ -521,7 +556,7 @@ describe('Typeahead should', () => {
             <Typeahead fieldName="fieldName" options={options} allowUnknownValue={true}/>
         );
         wrapper.find('input').simulate('focus');
-        simulateKeyPresses(wrapper.find('input'), 'unknownValue');
+        simulateKeys(wrapper.find('input'), 'unknownValue');
         expect(wrapper.find('.typeahead__no_options').exists()).toBe(false);
     });
 
@@ -530,7 +565,7 @@ describe('Typeahead should', () => {
             <Typeahead fieldName="fieldName" options={options} allowUnknownValue={true}/>
         );
         wrapper.find('input').simulate('focus');
-        simulateKeyPresses(wrapper.find('input'), 'unknownValue');
+        simulateKeys(wrapper.find('input'), 'unknownValue');
         expect(wrapper.find('.typeahead__option').exists()).toBe(true);
         expect(wrapper.find('.typeahead__option').html()).toContain('unknownValue');
         expect(wrapper.find('.typeahead__option').html()).toContain('(+)');
@@ -541,7 +576,7 @@ describe('Typeahead should', () => {
             <Typeahead fieldName="fieldName" options={options} allowUnknownValue={true}/>
         );
         wrapper.find('input').simulate('focus');
-        simulateKeyPresses(wrapper.find('input'), 'unknownValue');
+        simulateKeys(wrapper.find('input'), 'unknownValue');
         wrapper.find('input').simulate('keyDown', {keyCode: KEY_TAB});
         wrapper.find('input').simulate('blur');
         wrapper.find('input').simulate('focus');
@@ -635,7 +670,7 @@ describe('Typeahead should', () => {
     it('render options of a group when searching for a group label', () => {
         const wrapper = mount(<Typeahead fieldName="fieldName" options={optionsWithGroups} groups={groups}/>);
         wrapper.find('input').simulate('focus');
-        simulateKeyPresses(wrapper.find('input'), 'Group 1');
+        simulateKeys(wrapper.find('input'), 'Group 1');
 
         const value1Option = wrapper.find('.typeahead__option[data-value="value1"]');
         expect(value1Option.exists()).toBe(true);
@@ -661,7 +696,7 @@ describe('Typeahead should', () => {
         const wrapper = mount(<Typeahead fieldName="fieldName" options={optionsWithGroups} groups={groups}
             renderEmptyGroups={true}/>);
         wrapper.find('input').simulate('focus');
-        simulateKeyPresses(wrapper.find('input'), 'does not exist');
+        simulateKeys(wrapper.find('input'), 'does not exist');
 
         const group1 = wrapper.find('.typeahead__group[data-value="group1"]');
         expect(group1.exists()).toBe(true);
@@ -673,7 +708,7 @@ describe('Typeahead should', () => {
         const wrapper = mount(<Typeahead fieldName="fieldName" options={optionsWithGroups} groups={groups}
             renderEmptyGroups={false}/>);
         wrapper.find('input').simulate('focus');
-        simulateKeyPresses(wrapper.find('input'), 'does not exist');
+        simulateKeys(wrapper.find('input'), 'does not exist');
 
         const group1 = wrapper.find('.typeahead__group[data-value="group1"]');
         expect(group1.exists()).toBe(false);
@@ -684,7 +719,7 @@ describe('Typeahead should', () => {
     it('not render empty groups when renderEmptyGroups prop is missing', () => {
         const wrapper = mount(<Typeahead fieldName="fieldName" options={optionsWithGroups} groups={groups}/>);
         wrapper.find('input').simulate('focus');
-        simulateKeyPresses(wrapper.find('input'), 'does not exist');
+        simulateKeys(wrapper.find('input'), 'does not exist');
 
         const group1 = wrapper.find('.typeahead__group[data-value="group1"]');
         expect(group1.exists()).toBe(false);
@@ -695,7 +730,7 @@ describe('Typeahead should', () => {
     it('select correct option using mouse click when options are filtered', () => {
         const wrapper = mount(<Typeahead fieldName="fieldName" options={options}/>);
         wrapper.find('input').simulate('focus');
-        simulateKeyPresses(wrapper.find('input'), 'bel2');
+        simulateKeys(wrapper.find('input'), 'bel2');
         const value1Option = wrapper.find('.typeahead__option[data-value="value2"]');
         value1Option.simulate('mouseDown');
         wrapper.find('input').simulate('blur');
@@ -706,14 +741,14 @@ describe('Typeahead should', () => {
         const handleBlur = () => done();
         const wrapper = mount(<Typeahead fieldName="fieldName" options={options} onBlur={handleBlur}/>);
         wrapper.find('input').simulate('focus');
-        simulateKeyPresses(wrapper.find('input'), 'bel2');
+        simulateKeys(wrapper.find('input'), 'bel2');
         wrapper.find('input').simulate('blur');
     });
 
     it('not crash when options are filtered and arrow key up is pressed', () => {
         const wrapper = mount(<Typeahead fieldName="fieldName" options={options}/>);
         wrapper.find('input').simulate('focus');
-        simulateKeyPresses(wrapper.find('input'), 'bel2');
+        simulateKeys(wrapper.find('input'), 'bel2');
         wrapper.find('input').simulate('keyDown', {keyCode: KEY_UP});
     });
 
@@ -724,13 +759,34 @@ describe('Typeahead should', () => {
         expect(wrapper.state('typedLabel')).toEqual('somethingElse'); // label can now be set appropriately
     });
 
-    function simulateKeyPresses(wrapper, text) {
+    it('throw an error if groups are enabled but at least one option does not specify its group', () => {
+        try {
+            shallow(<Typeahead fieldName="fieldName" groups={groups} options={options}/>);
+            fail();
+        } catch (_) {
+        }
+    });
+
+    it('throw an error if groups are enabled and one option references an unknown group', () => {
+        const invalidOptions = [{label: 'label', value: 'value', group: 'does not exist'}];
+        try {
+            shallow(<Typeahead fieldName="fieldName" groups={groups} options={invalidOptions}/>);
+            fail();
+        } catch (_) {
+        }
+    });
+
+    function simulateKeys(wrapper, text) {
         for (let i = 0; i < text.length; i++) {
-            wrapper.simulate('keyPress', {
-                which: text.charCodeAt(i),
+            const charCode = text.charCodeAt(i);
+            const keyEvent = {
+                which: charCode,
                 key: text[i],
-                keyCode: text.charCodeAt(i)
-            });
+                keyCode: charCode
+            };
+            wrapper.simulate('keyDown', keyEvent);
+            wrapper.simulate('keyPress', keyEvent);
+            wrapper.simulate('keyUp', keyEvent);
             wrapper.simulate('change', {
                 target: {
                     value: text.substring(0, i + 1)
