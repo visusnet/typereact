@@ -18,7 +18,6 @@
   "plugins": [
     "babel",
     "flowtype",
-    "class-property",
     "import",
     "react"
   ],
@@ -223,7 +222,7 @@
       "error",
       "always"
     ],
-    "class-property/class-property-semicolon": [
+    "babel/semi": [
       "error",
       "always"
     ],
