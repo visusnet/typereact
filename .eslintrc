@@ -12,12 +12,10 @@
     }
   },
   "extends": [
-    "plugin:flowtype/recommended",
     "plugin:react/recommended"
   ],
   "plugins": [
     "babel",
-    "flowtype",
     "import",
     "react"
   ],
