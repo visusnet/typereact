@@ -50,7 +50,7 @@ const handleBlur = (fieldName, value) => {
 
 ### Options
 
-``options`` must be an array with objects containing a ``label`` and a ``value``, e.g.
+``options`` must be an array with objects containing a ``label`` (``string``) and a ``value`` (can have any type), e.g.
 
 ```javascript
 {
@@ -61,7 +61,7 @@ const handleBlur = (fieldName, value) => {
 
 ### Groups
 
-If you want your options to be grouped, you can set the ``groups`` prop which has the same structure as the ``options`` prop. In order to assign options to a group, you have to add an additional ``group`` property to the options.
+If you want your options to be grouped, you can set the ``groups`` prop which has the same structure as the ``options`` prop. In order to assign options to a group, you have to add an additional ``group`` property (of any type that matches the type of the group's ``value``) to the options.
 
 Example:
 ```javascript
