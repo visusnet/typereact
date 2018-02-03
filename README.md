@@ -80,7 +80,7 @@ const groups = [
 
 ## Styling
 
-You can apply your own styling or use [the example](https://github.com/visusnet/typereact/blob/master/example/Typeahead.scss).
+You can apply your own styling or use [the example](https://github.com/visusnet/typereact/blob/gh-pages-source/src/Typeahead.scss) that is used by the demo page.
 
 ## License
 
