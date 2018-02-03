@@ -4,6 +4,8 @@
 
 Typereact is a simple React typeahead component that supports grouped entries.
 
+![Typeahead example](/.github/typeahead.gif)
+
 ## Demo
 
 You can find a demo here: https://visusnet.github.io/typereact/
