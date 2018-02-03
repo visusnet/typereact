@@ -1,0 +1,95 @@
+.typeahead {
+  position: relative; }
+  .typeahead input {
+    font-family: 'Open Sans', sans-serif;
+    font-weight: 400;
+    font-style: normal;
+    font-size: 14px;
+    line-height: 30px;
+    background-image: url("./icons/arrow-down.svg");
+    background-size: 12px;
+    background-repeat: no-repeat;
+    background-position: calc(100% - 10px) 10px;
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 120px;
+    color: #333333;
+    text-overflow: ellipsis;
+    padding: 0 24px 0 12px;
+    border: 1px solid #CCCCCC; }
+    .typeahead input:disabled {
+      background-color: #F2F2F2;
+      color: #999999; }
+    .typeahead input:focus {
+      outline: 1px solid #80b7dc;
+      border: 1px solid #80b7dc;
+      outline-offset: 0; }
+  .typeahead__options {
+    position: absolute;
+    background-color: #FFFFFF;
+    box-shadow: 0 1px 4px 0 #CCCCCC;
+    border: 1px solid #CCCCCC;
+    border-top: 0;
+    top: 33px;
+    left: 0;
+    overflow-y: auto;
+    max-height: 300px;
+    z-index: 10;
+    min-width: calc(100% - 2px);
+    max-width: 100%;
+    padding: 16px 0 24px; }
+  .typeahead__option {
+    font-family: 'Open Sans', sans-serif;
+    font-weight: 400;
+    font-style: normal;
+    font-size: 14px;
+    line-height: 28px;
+    color: #333333;
+    padding: 0 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer; }
+    .typeahead__option[data-highlighted=true] {
+      background: #F7F7F7; }
+    .typeahead__option:hover {
+      background: #F2F2F2; }
+    .typeahead__option__new_option {
+      color: #666666; }
+  .typeahead__no_options {
+    position: relative;
+    font-family: 'Open Sans', sans-serif;
+    font-weight: 400;
+    font-style: normal;
+    font-size: 14px;
+    line-height: 28px;
+    color: #666666;
+    padding: 0 12px;
+    text-overflow: ellipsis; }
+    .typeahead__no_options__keyword {
+      color: #333333; }
+  .typeahead__group {
+    font-family: 'Open Sans', sans-serif;
+    font-weight: 600;
+    font-style: normal;
+    font-size: 12px;
+    line-height: 28px;
+    color: #999999; }
+    .typeahead__group__label {
+      padding: 0 12px; }
+    .typeahead__group:not(:first-of-type) {
+      margin-top: 15px;
+      border-top: 1px solid #CCCCCC;
+      padding-top: 16px; }
+  .typeahead__clear {
+    position: absolute;
+    width: 32px;
+    height: 32px;
+    right: 22px;
+    top: 0;
+    background: url("icons/clear.svg");
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: 8px;
+    border-color: transparent; }
+    .typeahead__clear:active {
+      outline: 0; }

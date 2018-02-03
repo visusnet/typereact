@@ -1,0 +1,9 @@
+@import "mixins";
+
+h1 {
+  @include semibold-font(18px, 30px);
+}
+
+h2 {
+  @include semibold-font(14px, 30px);
+}

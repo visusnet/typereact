@@ -1,0 +1,15 @@
+@mixin regular-font($fontSize, $lineHeight) {
+    font-family: 'Open Sans', sans-serif;
+    font-weight: 400;
+    font-style: normal;
+    font-size: $fontSize;
+    line-height: $lineHeight;
+}
+
+@mixin semibold-font($fontSize, $lineHeight) {
+    font-family: 'Open Sans', sans-serif;
+    font-weight: 600;
+    font-style: normal;
+    font-size: $fontSize;
+    line-height: $lineHeight;
+}
