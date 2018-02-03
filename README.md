@@ -4,6 +4,10 @@
 
 Typereact is a simple React typeahead component that supports grouped entries.
 
+## Demo
+
+You can find a demo here: https://visusnet.github.io/typereact/
+
 ## Install
 
 With npm:
