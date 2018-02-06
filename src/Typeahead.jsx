@@ -5,6 +5,7 @@ import scrollIntoView from 'dom-scroll-into-view';
 const DEFAULT_VALUE = undefined;
 const DEFAULT_LABEL = '';
 const KEY_ENTER = 13;
+const KEY_NUMPAD_ENTER = 176;
 const KEY_UP = 38;
 const KEY_DOWN = 40;
 
@@ -114,7 +115,7 @@ export default class Typeahead extends Component {
                     isOpen: true
                 });
             }
-        } else if (e.keyCode === KEY_ENTER) {
+        } else if (e.keyCode === KEY_ENTER || e.keyCode === KEY_NUMPAD_ENTER) {
             if (this.state.isOpen) {
                 const previousValue = this.state.value;
                 this._updateValue(this._afterValueChanged(previousValue));

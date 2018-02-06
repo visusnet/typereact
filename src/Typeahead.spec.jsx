@@ -8,6 +8,7 @@ Enzyme.configure({adapter: new Adapter()});
 
 const KEY_TAB = 9;
 const KEY_ENTER = 13;
+const KEY_NUMPAD_ENTER = 176;
 const KEY_UP = 38;
 const KEY_DOWN = 40;
 
@@ -240,6 +241,15 @@ describe('Typeahead should', () => {
         expect(wrapper.state('value')).toEqual('value2');
     });
 
+    it('update value to highlighted option when numpad enter is pressed', () => {
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={options}/>);
+        wrapper.find('input').simulate('focus');
+        wrapper.find('input').simulate('keyDown', {keyCode: KEY_DOWN});
+        wrapper.find('input').simulate('keyDown', {keyCode: KEY_DOWN});
+        wrapper.find('input').simulate('keyDown', {keyCode: KEY_NUMPAD_ENTER});
+        expect(wrapper.state('value')).toEqual('value2');
+    });
+
     it('not do anything when enter is pressed and the menu is closed', () => {
         const handleBlur = jest.fn();
         const handleChange = jest.fn();
@@ -248,6 +258,7 @@ describe('Typeahead should', () => {
         wrapper.find('input').simulate('focus');
         wrapper.find('input').simulate('keyDown', {keyCode: KEY_ENTER});
         wrapper.find('input').simulate('keyDown', {keyCode: KEY_ENTER});
+        wrapper.find('input').simulate('keyDown', {keyCode: KEY_NUMPAD_ENTER});
         expect(wrapper.state('value')).toEqual(undefined);
         expect(handleBlur.mock.calls).toHaveLength(0);
         expect(handleChange.mock.calls).toHaveLength(0);
