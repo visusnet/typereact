@@ -55,6 +55,18 @@ describe('Typeahead should', () => {
         expect(wrapper.find('input[id]')).toHaveLength(0);
     });
 
+    it('render with className typeahead if no className is given', () => {
+        const wrapper = mount(<Typeahead fieldName="fieldName"/>);
+        expect(wrapper.hasClass('typeahead')).toBe(true);
+    });
+
+    it('render with the given className', () => {
+        const wrapper = mount(<Typeahead fieldName="fieldName" className="customclass1 customclass2"/>);
+        expect(wrapper.hasClass('customclass1')).toBe(true);
+        expect(wrapper.hasClass('customclass2')).toBe(true);
+        expect(wrapper.hasClass('typeahead')).not.toBe(true);
+    });
+
     it('not open menu by default', () => {
         const wrapper = mount(<Typeahead fieldName="fieldName" options={options}/>);
 

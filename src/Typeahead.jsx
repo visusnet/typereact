@@ -13,6 +13,7 @@ export default class Typeahead extends Component {
     static propTypes = {
         allowUnknownValue: PropTypes.bool,
         autoSelectSingleOption: PropTypes.bool,
+        className: PropTypes.string,
         fieldName: PropTypes.string.isRequired,
         groups: PropTypes.arrayOf(PropTypes.shape({
             label: PropTypes.string.isRequired,
@@ -35,6 +36,7 @@ export default class Typeahead extends Component {
     static defaultProps = {
         allowUnknownValue: false,
         autoSelectSingleOption: false,
+        className: 'typeahead',
         groups: undefined,
         id: undefined,
         isClearable: false,
@@ -437,8 +439,9 @@ export default class Typeahead extends Component {
 
     render() {
         const idProp = this.props.id ? {id: this.props.id} : {};
+        const className = this.props.className;
         return (
-            <div className="typeahead">
+            <div className={className}>
                 <input
                     {...idProp}
                     disabled={this.props.isDisabled}
