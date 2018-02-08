@@ -582,10 +582,13 @@ describe('Typeahead should', () => {
         wrapper.find('input').simulate('focus');
         wrapper.find('input').simulate('keyDown', {keyCode: KEY_DOWN}); // value1
         wrapper.find('input').simulate('keyDown', {keyCode: KEY_ENTER});
+        expect(handleChange.mock.calls.length).toBe(1);
         wrapper.find('input').simulate('keyDown', {keyCode: KEY_DOWN}); // value1
+        expect(wrapper.find('input').prop('value')).toEqual('label1');
         wrapper.find('input').simulate('keyDown', {keyCode: KEY_DOWN}); // value2
         wrapper.find('input').simulate('keyDown', {keyCode: KEY_TAB});
         wrapper.find('input').simulate('blur');
+        expect(wrapper.find('input').prop('value')).toEqual('label2');
         expect(handleChange.mock.calls.length).toBe(2);
     });
 

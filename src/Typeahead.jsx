@@ -4,10 +4,14 @@ import scrollIntoView from 'dom-scroll-into-view';
 
 const DEFAULT_VALUE = undefined;
 const DEFAULT_LABEL = '';
+const KEY_TAB = 9;
 const KEY_ENTER = 13;
 const KEY_NUMPAD_ENTER = 176;
 const KEY_UP = 38;
 const KEY_DOWN = 40;
+
+const UNKNOWN_VALUE_HIGHLIGHTED = -1;
+const NOTHING_HIGHLIGHTED = undefined;
 
 export default class Typeahead extends Component {
     static propTypes = {
@@ -52,7 +56,7 @@ export default class Typeahead extends Component {
 
     state = {
         options: undefined,
-        highlightedIndex: undefined,
+        highlightedIndex: NOTHING_HIGHLIGHTED,
         isOpen: false,
         typedLabel: '',
         value: undefined
@@ -99,7 +103,8 @@ export default class Typeahead extends Component {
     _openIfPossible = () => {
         if (!this.state.isOpen) {
             this.setState((state, props) => ({
-                isOpen: props.minTypedCharacters ? props.minTypedCharacters <= state.typedLabel.length : true
+                isOpen: props.minTypedCharacters ? props.minTypedCharacters <= state.typedLabel.length : true,
+                highlightedIndex: this._getHighlightedIndexByTypedLabel()
             }));
         }
     };
@@ -122,9 +127,11 @@ export default class Typeahead extends Component {
 
     _getHighlightedIndexByTypedLabel = () => {
         if (this.props.minTypedCharacters && this.props.minTypedCharacters > this.state.typedLabel.length) {
-            return undefined;
+            return NOTHING_HIGHLIGHTED;
         }
-        return this._getFilteredOptions().findIndex(this._byTypedLabel);
+        const optionIndex = this._getFilteredOptions().findIndex(this._byTypedLabel);
+        const typedLabelFoundInOptions = optionIndex !== -1;
+        return typedLabelFoundInOptions ? optionIndex : NOTHING_HIGHLIGHTED;
     };
 
     _handleKeyDown = (e) => {
@@ -149,7 +156,7 @@ export default class Typeahead extends Component {
                 const previousValue = this.state.value;
                 this._updateValue(this._afterValueChanged(previousValue));
             }
-        } else {
+        } else if (e.keyCode !== KEY_TAB) {
             this._openIfPossible();
         }
     };
@@ -165,6 +172,7 @@ export default class Typeahead extends Component {
                 isUnknownValue ? previousValue : valueOfHighlightedOption;
             this.setState({
                 isOpen: false,
+                highlightedIndex: undefined,
                 value: nextValue,
                 typedLabel: this._getLabelByValue(nextValue)
             }, afterValueUpdated);
@@ -201,14 +209,8 @@ export default class Typeahead extends Component {
 
     _getValueOfHighlightedOption = () => {
         const highlightedIndex = this.state.highlightedIndex;
-        if (highlightedIndex === undefined) {
+        if (highlightedIndex === NOTHING_HIGHLIGHTED) {
             return DEFAULT_VALUE;
-        }
-        if (this.props.allowUnknownValue && highlightedIndex === -1) {
-            return this.state.typedLabel;
-        }
-        if (highlightedIndex === -1) {
-            return undefined;
         }
         const filteredOptions = this._getFilteredOptions();
         return filteredOptions[highlightedIndex].value;
@@ -217,7 +219,7 @@ export default class Typeahead extends Component {
     _getInitialIndex = (props) => {
         const {options, value} = props;
         const currentOptionIndex = options.findIndex(opt => opt.value === value);
-        return currentOptionIndex === -1 ? undefined : currentOptionIndex;
+        return currentOptionIndex === -1 ? NOTHING_HIGHLIGHTED : currentOptionIndex;
     };
 
     _getPreviousIndex = () => {
@@ -225,7 +227,7 @@ export default class Typeahead extends Component {
         const potentialPreviousOptionIndex = currentOptionIndex === undefined ? 0 : currentOptionIndex - 1;
         const hasPreviousOption = potentialPreviousOptionIndex >= 0;
         if (this.props.allowUnknownValue && !hasPreviousOption && this._isUnknownValue()) {
-            return -1;
+            return UNKNOWN_VALUE_HIGHLIGHTED;
         }
         return hasPreviousOption ? potentialPreviousOptionIndex : currentOptionIndex;
     };
@@ -258,7 +260,10 @@ export default class Typeahead extends Component {
         return wrappedOptions.map(wrappedOption => wrappedOption.option);
     };
 
-    _byTypedLabel = option => option.label.toLowerCase().includes(this.state.typedLabel.toLowerCase());
+    _typedLabelHasText = () => this.state.typedLabel;
+
+    _byTypedLabel = option => this._typedLabelHasText() &&
+        option.label.toLowerCase().includes(this.state.typedLabel.toLowerCase());
 
     _byGroupAndTypedLabel = option => {
         if (this.props.groups !== undefined) {
@@ -342,8 +347,8 @@ export default class Typeahead extends Component {
         });
     };
 
-    _isUnknownValue = () => this.state.typedLabel !== '' &&
-        this._getFilteredOptions().findIndex(option => option.label === this.state.typedLabel) === -1;
+    _isUnknownValue = () => this._typedLabelHasText() &&
+        !this._getFilteredOptions().some(option => option.label === this.state.typedLabel);
 
     _getAbsoluteIndex = option => this.state.options.findIndex(opt => opt.value === option.value);
 
@@ -353,7 +358,8 @@ export default class Typeahead extends Component {
     };
 
     _scrollHighlightedOptionIntoView = () => {
-        if (this.state.isOpen && this.state.highlightedIndex !== undefined && this.state.highlightedIndex !== -1) {
+        if (this.state.isOpen && this.state.highlightedIndex !== NOTHING_HIGHLIGHTED &&
+            this.state.highlightedIndex !== UNKNOWN_VALUE_HIGHLIGHTED) {
             const optionNode = this.elementRefs[`option_${this._relativeToAbsoluteIndex(this.state.highlightedIndex)}`];
             const menuNode = this.elementRefs['menu'];
             scrollIntoView(optionNode, menuNode, {onlyScrollIfNeeded: true});
@@ -385,12 +391,12 @@ export default class Typeahead extends Component {
     }
 
     renderUnknownValueOption() {
-        if (this.props.allowUnknownValue && this.state.typedLabel.length !== 0 && this._isUnknownValue()) {
+        if (this.props.allowUnknownValue && this._isUnknownValue()) {
             const option = {
                 label: this.state.typedLabel,
                 value: this.state.typedLabel
             };
-            return this.renderOption(option, -1);
+            return this.renderOption(option, UNKNOWN_VALUE_HIGHLIGHTED);
         }
     }
 
@@ -410,7 +416,7 @@ export default class Typeahead extends Component {
                 data-group={option.group}
                 onMouseDown={this._createHandleMouseDown(option.value, absoluteIndex)}>
                 {option.label}
-                {absoluteIndex === -1 ? this.renderNewOptionMarker() : null}
+                {absoluteIndex === UNKNOWN_VALUE_HIGHLIGHTED ? this.renderNewOptionMarker() : null}
             </div>
         );
     };
