@@ -22,6 +22,7 @@ export default class Typeahead extends Component {
         id: PropTypes.string,
         isClearable: PropTypes.bool,
         isDisabled: PropTypes.bool,
+        minTypedCharacters: PropTypes.number,
         onBlur: PropTypes.func,
         onChange: PropTypes.func,
         options: PropTypes.arrayOf(PropTypes.shape({
@@ -60,22 +61,20 @@ export default class Typeahead extends Component {
     elementRefs;
 
     _handleFocus = () => {
-        this.setState({
-            isOpen: true
-        });
+        this._openIfPossible();
     };
 
     _handleMouseDown = () => {
-        this.setState({
-            isOpen: true
-        });
+        this._openIfPossible();
     };
 
     _handleBlur = () => {
-        const previousValue = this.state.value;
-        this._updateValue(() => {
-            this._afterValueChanged(previousValue)();
-            this._fireOnBlur();
+        this._clearIfNecessary(() => {
+            const previousValue = this.state.value;
+            this._updateValue(() => {
+                this._afterValueChanged(previousValue)();
+                this._fireOnBlur();
+            });
         });
     };
 
@@ -91,10 +90,40 @@ export default class Typeahead extends Component {
             if (label === '' && this.props.isClearable) {
                 this._clearValue();
             }
+
+            this._openIfPossible();
+            this._closeIfNecessary();
         });
     };
 
+    _openIfPossible = () => {
+        if (!this.state.isOpen) {
+            this.setState((state, props) => ({
+                isOpen: props.minTypedCharacters ? props.minTypedCharacters <= state.typedLabel.length : true
+            }));
+        }
+    };
+
+    _closeIfNecessary = () => {
+        if (this.props.minTypedCharacters) {
+            this.setState(state => ({
+                isOpen: this.props.minTypedCharacters <= state.typedLabel.length
+            }));
+        }
+    };
+
+    _clearIfNecessary = (afterClear) => {
+        if (this.props.minTypedCharacters && this.props.minTypedCharacters > this.state.typedLabel.length) {
+            this._updateValue(afterClear);
+        } else {
+            afterClear();
+        }
+    };
+
     _getHighlightedIndexByTypedLabel = () => {
+        if (this.props.minTypedCharacters && this.props.minTypedCharacters > this.state.typedLabel.length) {
+            return undefined;
+        }
         return this._getFilteredOptions().findIndex(this._byTypedLabel);
     };
 
@@ -113,27 +142,21 @@ export default class Typeahead extends Component {
                     this._scrollHighlightedOptionIntoView();
                 });
             } else {
-                this.setState({
-                    isOpen: true
-                });
+                this._openIfPossible();
             }
         } else if (e.keyCode === KEY_ENTER || e.keyCode === KEY_NUMPAD_ENTER) {
             if (this.state.isOpen) {
                 const previousValue = this.state.value;
                 this._updateValue(this._afterValueChanged(previousValue));
             }
-        } else if (!this.state.isOpen) {
-            this.setState({
-                isOpen: true
-            });
+        } else {
+            this._openIfPossible();
         }
     };
 
     _updateValue = (afterValueUpdated) => {
-        const shouldUpdateValue = !this.state.isOpen;
+        const shouldUpdateValue = this.state.isOpen || this.props.minTypedCharacters;
         if (shouldUpdateValue) {
-            afterValueUpdated();
-        } else {
             const previousValue = this.state.value;
             const valueOfHighlightedOption = this._getValueOfHighlightedOption();
             const isUnknownValue = valueOfHighlightedOption === undefined;
@@ -145,6 +168,8 @@ export default class Typeahead extends Component {
                 value: nextValue,
                 typedLabel: this._getLabelByValue(nextValue)
             }, afterValueUpdated);
+        } else {
+            afterValueUpdated();
         }
     };
 
