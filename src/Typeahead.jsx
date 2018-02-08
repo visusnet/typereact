@@ -209,14 +209,8 @@ export default class Typeahead extends Component {
 
     _getValueOfHighlightedOption = () => {
         const highlightedIndex = this.state.highlightedIndex;
-        if (highlightedIndex === undefined) {
+        if (highlightedIndex === NOTHING_HIGHLIGHTED) {
             return DEFAULT_VALUE;
-        }
-        if (this.props.allowUnknownValue && highlightedIndex === UNKNOWN_VALUE_HIGHLIGHTED) {
-            return this.state.typedLabel;
-        }
-        if (highlightedIndex === UNKNOWN_VALUE_HIGHLIGHTED) {
-            return undefined;
         }
         const filteredOptions = this._getFilteredOptions();
         return filteredOptions[highlightedIndex].value;
@@ -225,7 +219,7 @@ export default class Typeahead extends Component {
     _getInitialIndex = (props) => {
         const {options, value} = props;
         const currentOptionIndex = options.findIndex(opt => opt.value === value);
-        return currentOptionIndex === UNKNOWN_VALUE_HIGHLIGHTED ? undefined : currentOptionIndex;
+        return currentOptionIndex === -1 ? NOTHING_HIGHLIGHTED : currentOptionIndex;
     };
 
     _getPreviousIndex = () => {
