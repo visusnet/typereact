@@ -1,4 +1,4 @@
-import React, {Component} from 'react';
+import React, {PureComponent} from 'react';
 import * as PropTypes from 'prop-types';
 import scrollIntoView from 'dom-scroll-into-view';
 
@@ -13,7 +13,7 @@ const KEY_DOWN = 40;
 const UNKNOWN_VALUE_HIGHLIGHTED = -1;
 const NOTHING_HIGHLIGHTED = undefined;
 
-export default class Typeahead extends Component {
+export default class Typeahead extends PureComponent {
     static propTypes = {
         allowUnknownValue: PropTypes.bool,
         autoSelectSingleOption: PropTypes.bool,
