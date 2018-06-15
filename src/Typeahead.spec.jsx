@@ -55,6 +55,16 @@ describe('Typeahead should', () => {
         expect(wrapper.find('input[id]')).toHaveLength(0);
     });
 
+    it('render tabIndex prop if specified', () => {
+        const wrapper = mount(<Typeahead fieldName="fieldName" tabIndex="1"/>);
+        expect(wrapper.find('input').prop('tabIndex')).toBe('1');
+    });
+
+    it('not render tabIndex prop when omitted', () => {
+        const wrapper = mount(<Typeahead fieldName="fieldName"/>);
+        expect(wrapper.find('input').prop('tabIndex')).not.toBeDefined();
+    });
+
     it('not open menu by default', () => {
         const wrapper = mount(<Typeahead fieldName="fieldName" options={options}/>);
 

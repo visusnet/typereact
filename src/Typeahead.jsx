@@ -29,6 +29,7 @@ export default class Typeahead extends Component {
         })).isRequired,
         placeholder: PropTypes.string,
         renderEmptyGroups: PropTypes.bool,
+        tabIndex: PropTypes.string,
         value: PropTypes.any
     };
 
@@ -437,10 +438,12 @@ export default class Typeahead extends Component {
 
     render() {
         const idProp = this.props.id ? {id: this.props.id} : {};
+        const tabIndexProp = this.props.tabIndex ? {tabIndex: this.props.tabIndex} : {};
         return (
             <div className="typeahead">
                 <input
                     {...idProp}
+                    {...tabIndexProp}
                     disabled={this.props.isDisabled}
                     name={this.props.fieldName}
                     onFocus={this._handleFocus}
