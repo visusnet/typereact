@@ -1,6 +1,9 @@
 import 'raf/polyfill';
 import React from 'react';
-import Enzyme, {mount, shallow} from 'enzyme';
+import Enzyme, {
+    mount,
+    shallow
+} from 'enzyme';
 import Adapter from 'enzyme-adapter-react-16';
 import Typeahead from './Typeahead';
 
@@ -65,6 +68,18 @@ describe('Typeahead should', () => {
         expect(wrapper.find('input').prop('tabIndex')).not.toBeDefined();
     });
 
+    it('render with className typeahead if no className is given', () => {
+        const wrapper = mount(<Typeahead fieldName="fieldName"/>);
+        expect(wrapper.hasClass('typeahead')).toBe(true);
+    });
+
+    it('render with the given className', () => {
+        const wrapper = mount(<Typeahead fieldName="fieldName" className="customclass1 customclass2"/>);
+        expect(wrapper.hasClass('customclass1')).toBe(true);
+        expect(wrapper.hasClass('customclass2')).toBe(true);
+        expect(wrapper.hasClass('typeahead')).not.toBe(true);
+    });
+
     it('not open menu by default', () => {
         const wrapper = mount(<Typeahead fieldName="fieldName" options={options}/>);
 
@@ -90,6 +105,106 @@ describe('Typeahead should', () => {
         wrapper.find('input').simulate('keyDown', {keyCode: KEY_DOWN});
 
         expect(wrapper.state('isOpen')).toBe(true);
+    });
+
+    it('only open menu on focus enter when minimum typed characters have been typed', () => {
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={options} minTypedCharacters={3}/>);
+
+        wrapper.find('input').simulate('focus');
+        expect(wrapper.state('isOpen')).toBe(false);
+
+        simulateKeys(wrapper, 'v');
+        wrapper.find('input').simulate('focus');
+        wrapper.update();
+        expect(wrapper.state('isOpen')).toBe(false);
+
+        simulateKeys(wrapper, 'va');
+        wrapper.find('input').simulate('focus');
+        wrapper.update();
+        expect(wrapper.state('isOpen')).toBe(false);
+
+        simulateKeys(wrapper, 'val');
+        wrapper.find('input').simulate('focus');
+        wrapper.update();
+        expect(wrapper.state('isOpen')).toBe(true);
+    });
+
+    it('only open menu on any key down when minimum typed characters have been typed', () => {
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={options} minTypedCharacters={3}/>);
+
+        wrapper.find('input').simulate('keyDown', {which: 'a'});
+        wrapper.update();
+        expect(wrapper.state('isOpen')).toBe(false);
+
+        simulateKeys(wrapper, 'v');
+        wrapper.update();
+        expect(wrapper.state('isOpen')).toBe(false);
+
+        simulateKeys(wrapper, 'va');
+        wrapper.update();
+        expect(wrapper.state('isOpen')).toBe(false);
+
+        simulateKeys(wrapper, 'val');
+        wrapper.update();
+        expect(wrapper.state('isOpen')).toBe(true);
+    });
+
+    it('only open menu on arrow key down when minimum typed characters have been typed', () => {
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={options} minTypedCharacters={3}/>);
+
+        wrapper.find('input').simulate('keyDown', {keyCode: KEY_DOWN});
+        wrapper.update();
+        expect(wrapper.state('isOpen')).toBe(false);
+
+        simulateKeys(wrapper, 'l');
+        wrapper.find('input').simulate('keyDown', {keyCode: KEY_DOWN});
+        wrapper.update();
+        expect(wrapper.state('isOpen')).toBe(false);
+
+        simulateKeys(wrapper, 'la');
+        wrapper.find('input').simulate('keyDown', {keyCode: KEY_DOWN});
+        wrapper.update();
+        expect(wrapper.state('isOpen')).toBe(false);
+
+        simulateKeys(wrapper, 'lab');
+        wrapper.find('input').simulate('keyDown', {keyCode: KEY_DOWN});
+        wrapper.update();
+        expect(wrapper.state('isOpen')).toBe(true);
+    });
+
+    it('close menu when minimum typed characters have not been typed', () => {
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={options} minTypedCharacters={3}/>);
+        wrapper.find('input').simulate('focus');
+
+        simulateKeys(wrapper, 'labe');
+        wrapper.update();
+        expect(wrapper.state('isOpen')).toBe(true);
+
+        simulateKeys(wrapper, 'la');
+        wrapper.update();
+        expect(wrapper.state('isOpen')).toBe(false);
+    });
+
+    it('reset value to previously selected value when minimum typed characters have not been typed', () => {
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={options} minTypedCharacters={3}/>);
+        wrapper.find('input').simulate('focus');
+
+        simulateKeys(wrapper, 'label');
+        wrapper.find('input').simulate('blur');
+        expect(wrapper.state('value')).toBe('value1');
+
+        simulateKeys(wrapper, 'la');
+        wrapper.find('input').simulate('blur');
+        expect(wrapper.state('value')).toBe('value1');
+    });
+
+    it('clear value when minimum typed characters have not been typed', () => {
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={options} minTypedCharacters={3}/>);
+        wrapper.find('input').simulate('focus');
+
+        simulateKeys(wrapper, 'la');
+        wrapper.find('input').simulate('blur');
+        expect(wrapper.state('value')).toBe(undefined);
     });
 
     it('close menu on focus lost', () => {
@@ -477,10 +592,13 @@ describe('Typeahead should', () => {
         wrapper.find('input').simulate('focus');
         wrapper.find('input').simulate('keyDown', {keyCode: KEY_DOWN}); // value1
         wrapper.find('input').simulate('keyDown', {keyCode: KEY_ENTER});
+        expect(handleChange.mock.calls.length).toBe(1);
         wrapper.find('input').simulate('keyDown', {keyCode: KEY_DOWN}); // value1
+        expect(wrapper.find('input').prop('value')).toEqual('label1');
         wrapper.find('input').simulate('keyDown', {keyCode: KEY_DOWN}); // value2
         wrapper.find('input').simulate('keyDown', {keyCode: KEY_TAB});
         wrapper.find('input').simulate('blur');
+        expect(wrapper.find('input').prop('value')).toEqual('label2');
         expect(handleChange.mock.calls.length).toBe(2);
     });
 
@@ -822,7 +940,8 @@ describe('Typeahead should', () => {
     });
 
     it('keep selection of allowed unknown option when enter is pressed', () => {
-        const wrapper = mount(<Typeahead fieldName="fieldName" options={options} allowUnknownValue={true} value="unknown"/>);
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={options} allowUnknownValue={true}
+            value="unknown"/>);
         wrapper.find('input').simulate('focus');
         wrapper.find('input').simulate('keyDown', {keyCode: KEY_ENTER});
         expect(wrapper.state('value')).toEqual('unknown');

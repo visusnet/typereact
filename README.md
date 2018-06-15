@@ -43,6 +43,7 @@ const handleBlur = (fieldName, value) => {
 | id                     | ``false`` | ``undefined``   | Sets the HTML input ID.                                                                                      |
 | isClearable            | ``false`` | ``false``       | Renders a button that unsets the selected value if set to true.                                              |
 | isDisabled             | ``false`` | ``false``       | If true, the component is disabled.                                                                          |
+| minTypedCharacters     | ``false`` | ``undefined``   | If set, at least ``minTypedCharacters`` must be typed before the menu is rendered.                           |
 | onBlur                 | ``false`` | no op           | A callback that is called when focus is lost. Parameters: ``fieldName``, ``value``.                          |
 | onChange               | ``false`` | no op           | A callback that is called when the value has changed. Parameters: ``fieldName``, ``value``.                  |
 | options                | ``false`` | ``[]``          | An array of label-value-pairs.                                                                               |
