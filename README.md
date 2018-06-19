@@ -49,6 +49,7 @@ const handleBlur = (fieldName, value) => {
 | options                | ``false`` | ``[]``          | An array of label-value-pairs.                                                                               |
 | placeholder            | ``false`` | ``''``          | Sets the HTML placeholder attribute.                                                                         |
 | renderEmptyGroups      | ``false`` | ``false``       | If true, groups will be rendered even if they don't have any options. Works only in conjunction with groups. |
+| tabIndex               | ``false`` | ``undefined```  | If set, this prop is passed down to the input field.                                                         |
 | value                  | ``false`` | ``undefined``   | If set, selects the option with the specified value.                                                         |
 
 ### Options
