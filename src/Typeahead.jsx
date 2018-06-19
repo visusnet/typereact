@@ -307,7 +307,7 @@ export default class Typeahead extends PureComponent {
         }, this._afterValueChanged(this.state.value));
     };
 
-    static _validateProps = (props) => {
+    _validateProps = (props) => {
         const {groups, options} = props;
 
         const groupsEnabled = groups !== undefined;
@@ -324,6 +324,28 @@ export default class Typeahead extends PureComponent {
         if (optionWithMissingGroupExists) {
             throw new Error('There is at least one option with an unknown group.');
         }
+    };
+
+    _initializeFromProps = (props) => {
+        this._validateProps(props);
+
+        const {value, options, groups} = props;
+        const sortedOptions = groups === undefined ? options : this._sortOptionsByGroup(options);
+        this.setState({
+            options: sortedOptions,
+            highlightedIndex: this._getInitialIndex(props),
+            value,
+            typedLabel: this._getLabelByValue(value, sortedOptions)
+        }, () => {
+            if (props.autoSelectSingleOption && options.length === 1) {
+                const valueOfSingleOption = options[0].value;
+                this.setState({
+                    highlightedIndex: 0,
+                    value: valueOfSingleOption,
+                    typedLabel: this._getLabelByValue(valueOfSingleOption)
+                }, this._afterValueChanged(this.state.value));
+            }
+        });
     };
 
     _isUnknownValue = () => this._typedLabelHasText() &&
@@ -349,19 +371,12 @@ export default class Typeahead extends PureComponent {
         this.elementRefs = {};
     }
 
-    static getDerivedStateFromProps(nextProps) {
-        Typeahead._validateProps(nextProps);
+    componentDidMount() {
+        this._initializeFromProps(this.props);
+    }
 
-        const {value, options, groups} = nextProps;
-        const sortedOptions = groups === undefined ? options : this._sortOptionsByGroup(options);
-        const canAutoSelectSingleOption = nextProps.autoSelectSingleOption && options.length === 1;
-        const nextValue = canAutoSelectSingleOption ? options[0].value : value;
-        return {
-            options: sortedOptions,
-            highlightedIndex: canAutoSelectSingleOption ? 0 : this._getInitialIndex(nextProps),
-            value: nextValue,
-            typedLabel: this._getLabelByValue(nextValue, sortedOptions)
-        };
+    componentWillReceiveProps(nextProps) {
+        this._initializeFromProps(nextProps);
     }
 
     renderNoOptionsMessage() {
