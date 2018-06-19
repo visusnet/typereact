@@ -35,6 +35,7 @@ export default class Typeahead extends PureComponent {
         })).isRequired,
         placeholder: PropTypes.string,
         renderEmptyGroups: PropTypes.bool,
+        tabIndex: PropTypes.number,
         value: PropTypes.any
     };
 
@@ -306,8 +307,8 @@ export default class Typeahead extends PureComponent {
         }, this._afterValueChanged(this.state.value));
     };
 
-    _validateProps = () => {
-        const {groups, options} = this.props;
+    _validateProps = (props) => {
+        const {groups, options} = props;
 
         const groupsEnabled = groups !== undefined;
         const optionWithoutGroupExists = groupsEnabled &&
@@ -326,7 +327,7 @@ export default class Typeahead extends PureComponent {
     };
 
     _initializeFromProps = (props) => {
-        this._validateProps();
+        this._validateProps(props);
 
         const {value, options, groups} = props;
         const sortedOptions = groups === undefined ? options : this._sortOptionsByGroup(options);
@@ -470,11 +471,13 @@ export default class Typeahead extends PureComponent {
 
     render() {
         const idProp = this.props.id ? {id: this.props.id} : {};
+        const tabIndexProp = this.props.tabIndex ? {tabIndex: this.props.tabIndex} : {};
         const className = this.props.className;
         return (
             <div className={className}>
                 <input
                     {...idProp}
+                    {...tabIndexProp}
                     disabled={this.props.isDisabled}
                     name={this.props.fieldName}
                     onFocus={this._handleFocus}
