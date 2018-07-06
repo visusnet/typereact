@@ -462,7 +462,7 @@ export default class Typeahead extends PureComponent {
     };
 
     renderClearButton() {
-        if (this.props.isClearable && this.state.value) {
+        if (this.props.isClearable && !this.props.isDisabled && this.state.value) {
             return (
                 <button className="typeahead__clear" href="/#" onClick={this._handleClearClick}/>
             );
