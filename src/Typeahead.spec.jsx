@@ -764,6 +764,14 @@ describe('Typeahead should', () => {
         expect(wrapper.find('.typeahead__clear').exists()).toBe(true);
     });
 
+    it('not render clear button when isDisabled prop is true', () => {
+        const wrapper = mount(
+            <Typeahead fieldName="fieldName" options={options} allowUnknownValue={true} isClearable={true}
+                isDisabled={true} value="value1"/>
+        );
+        expect(wrapper.find('.typeahead__clear').exists()).toBe(false);
+    });
+
     it('clear value when clear button is clicked', () => {
         const wrapper = mount(
             <Typeahead fieldName="fieldName" options={options} allowUnknownValue={true} isClearable={true}
