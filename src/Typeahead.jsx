@@ -1,6 +1,7 @@
 import React, {PureComponent} from 'react';
 import * as PropTypes from 'prop-types';
 import scrollIntoView from 'dom-scroll-into-view';
+import {Manager, Popper, Reference} from 'react-popper';
 
 const DEFAULT_VALUE = undefined;
 const DEFAULT_LABEL = '';
@@ -409,13 +410,13 @@ export default class Typeahead extends PureComponent {
     renderOption = (option, absoluteIndex) => {
         return (
             <div ref={element => this.elementRefs[`option_${absoluteIndex}`] = element}
-                key={`typeahead__option__${option.value}`}
-                className="typeahead__option"
-                data-index={absoluteIndex}
-                data-value={option.value}
-                data-highlighted={absoluteIndex === this._relativeToAbsoluteIndex(this.state.highlightedIndex)}
-                data-group={option.group}
-                onMouseDown={this._createHandleMouseDown(option.value, absoluteIndex)}>
+                 key={`typeahead__option__${option.value}`}
+                 className="typeahead__option"
+                 data-index={absoluteIndex}
+                 data-value={option.value}
+                 data-highlighted={absoluteIndex === this._relativeToAbsoluteIndex(this.state.highlightedIndex)}
+                 data-group={option.group}
+                 onMouseDown={this._createHandleMouseDown(option.value, absoluteIndex)}>
                 {option.label}
                 {absoluteIndex === UNKNOWN_VALUE_HIGHLIGHTED ? this.renderNewOptionMarker() : null}
             </div>
@@ -445,13 +446,20 @@ export default class Typeahead extends PureComponent {
     renderMenu() {
         if (this.state.isOpen) {
             return (
-                <div ref={element => this.elementRefs['menu'] = element} className="typeahead__options">
-                    {this.renderNoOptionsMessage()}
-                    {this.renderUnknownValueOption()}
-                    {this.props.groups === undefined ? this._getFilteredOptions().map(
-                        option => this.renderOption(option, this._getAbsoluteIndex(option))) :
-                        this.renderGroups()}
-                </div>
+                <Popper>
+                    {({ref, style, placement, arrowProps}) => (
+                        <div ref={ref} style={style} data-placement={placement} className="typeahead__options">
+                            <div ref={element => this.elementRefs['menu'] = element}>
+                                {this.renderNoOptionsMessage()}
+                                {this.renderUnknownValueOption()}
+                                {this.props.groups === undefined ? this._getFilteredOptions().map(
+                                    option => this.renderOption(option, this._getAbsoluteIndex(option))) :
+                                    this.renderGroups()}
+                                <div ref={arrowProps.ref} style={arrowProps.style}/>
+                            </div>
+                        </div>
+                    )}
+                </Popper>
             );
         }
     }
@@ -474,23 +482,29 @@ export default class Typeahead extends PureComponent {
         const tabIndexProp = this.props.tabIndex ? {tabIndex: this.props.tabIndex} : {};
         const className = this.props.className;
         return (
-            <div className={className}>
-                <input
-                    {...idProp}
-                    {...tabIndexProp}
-                    disabled={this.props.isDisabled}
-                    name={this.props.fieldName}
-                    onFocus={this._handleFocus}
-                    onBlur={this._handleBlur}
-                    onChange={this._handleChange}
-                    onKeyDown={this._handleKeyDown}
-                    onMouseDown={this._handleMouseDown}
-                    placeholder={this.props.placeholder}
-                    value={this._getLabel()}
-                />
-                {this.renderClearButton()}
-                {this.renderMenu()}
-            </div>
+            <Manager tag={false}>
+                <div className={className}>
+                    <Reference>
+                        {({ref}) => (
+                            <input ref={ref}
+                                   {...idProp}
+                                   {...tabIndexProp}
+                                   disabled={this.props.isDisabled}
+                                   name={this.props.fieldName}
+                                   onFocus={this._handleFocus}
+                                   onBlur={this._handleBlur}
+                                   onChange={this._handleChange}
+                                   onKeyDown={this._handleKeyDown}
+                                   onMouseDown={this._handleMouseDown}
+                                   placeholder={this.props.placeholder}
+                                   value={this._getLabel()}
+                            />
+                        )}
+                    </Reference>
+                    {this.renderClearButton()}
+                    {this.renderMenu()}
+                </div>
+            </Manager>
         );
     }
 }
