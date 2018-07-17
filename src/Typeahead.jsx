@@ -1,7 +1,11 @@
 import React, {PureComponent} from 'react';
 import * as PropTypes from 'prop-types';
 import scrollIntoView from 'dom-scroll-into-view';
-import {Manager, Popper, Reference} from 'react-popper';
+import {
+    Manager,
+    Popper,
+    Reference
+} from 'react-popper';
 
 const DEFAULT_VALUE = undefined;
 const DEFAULT_LABEL = '';
@@ -170,8 +174,8 @@ export default class Typeahead extends PureComponent {
             const valueOfHighlightedOption = this._getValueOfHighlightedOption();
             const isUnknownValue = valueOfHighlightedOption === undefined;
             const isUnknownValueAndAllowed = isUnknownValue && this.props.allowUnknownValue;
-            const nextValue = isUnknownValueAndAllowed ? this.state.typedLabel :
-                isUnknownValue ? previousValue : valueOfHighlightedOption;
+            const nextValue = isUnknownValueAndAllowed ? this.state.typedLabel : isUnknownValue ? previousValue
+                : valueOfHighlightedOption;
             this.setState({
                 isOpen: false,
                 highlightedIndex: undefined,
@@ -236,14 +240,14 @@ export default class Typeahead extends PureComponent {
 
     _getNextIndex = () => {
         const currentOptionIndex = this.state.highlightedIndex;
-        const potentialNextOptionIndex = currentOptionIndex === undefined ? this._getFirstGroupsFirstOptionIndex() :
-            currentOptionIndex + 1;
+        const potentialNextOptionIndex = currentOptionIndex === undefined ? this._getFirstGroupsFirstOptionIndex()
+            : currentOptionIndex + 1;
         const hasNextOption = potentialNextOptionIndex < this._getFilteredOptions().length;
         return hasNextOption ? potentialNextOptionIndex : currentOptionIndex;
     };
 
-    _getFirstGroupsFirstOptionIndex = () => this.props.groups === undefined ? 0 :
-        this.state.options.findIndex(option => option.group === this.props.groups[0].value);
+    _getFirstGroupsFirstOptionIndex = () => this.props.groups === undefined ? 0 : this.state.options.findIndex(
+        option => option.group === this.props.groups[0].value);
 
     _getLabel = () => {
         return this.state.typedLabel;
@@ -410,13 +414,13 @@ export default class Typeahead extends PureComponent {
     renderOption = (option, absoluteIndex) => {
         return (
             <div ref={element => this.elementRefs[`option_${absoluteIndex}`] = element}
-                 key={`typeahead__option__${option.value}`}
-                 className="typeahead__option"
-                 data-index={absoluteIndex}
-                 data-value={option.value}
-                 data-highlighted={absoluteIndex === this._relativeToAbsoluteIndex(this.state.highlightedIndex)}
-                 data-group={option.group}
-                 onMouseDown={this._createHandleMouseDown(option.value, absoluteIndex)}>
+                key={`typeahead__option__${option.value}`}
+                className="typeahead__option"
+                data-index={absoluteIndex}
+                data-value={option.value}
+                data-highlighted={absoluteIndex === this._relativeToAbsoluteIndex(this.state.highlightedIndex)}
+                data-group={option.group}
+                onMouseDown={this._createHandleMouseDown(option.value, absoluteIndex)}>
                 {option.label}
                 {absoluteIndex === UNKNOWN_VALUE_HIGHLIGHTED ? this.renderNewOptionMarker() : null}
             </div>
@@ -453,8 +457,8 @@ export default class Typeahead extends PureComponent {
                                 {this.renderNoOptionsMessage()}
                                 {this.renderUnknownValueOption()}
                                 {this.props.groups === undefined ? this._getFilteredOptions().map(
-                                    option => this.renderOption(option, this._getAbsoluteIndex(option))) :
-                                    this.renderGroups()}
+                                    option => this.renderOption(option, this._getAbsoluteIndex(option)))
+                                    : this.renderGroups()}
                                 <div ref={arrowProps.ref} style={arrowProps.style}/>
                             </div>
                         </div>
@@ -487,17 +491,17 @@ export default class Typeahead extends PureComponent {
                     <Reference>
                         {({ref}) => (
                             <input ref={ref}
-                                   {...idProp}
-                                   {...tabIndexProp}
-                                   disabled={this.props.isDisabled}
-                                   name={this.props.fieldName}
-                                   onFocus={this._handleFocus}
-                                   onBlur={this._handleBlur}
-                                   onChange={this._handleChange}
-                                   onKeyDown={this._handleKeyDown}
-                                   onMouseDown={this._handleMouseDown}
-                                   placeholder={this.props.placeholder}
-                                   value={this._getLabel()}
+                                {...idProp}
+                                {...tabIndexProp}
+                                disabled={this.props.isDisabled}
+                                name={this.props.fieldName}
+                                onFocus={this._handleFocus}
+                                onBlur={this._handleBlur}
+                                onChange={this._handleChange}
+                                onKeyDown={this._handleKeyDown}
+                                onMouseDown={this._handleMouseDown}
+                                placeholder={this.props.placeholder}
+                                value={this._getLabel()}
                             />
                         )}
                     </Reference>
