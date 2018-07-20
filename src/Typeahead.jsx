@@ -1,6 +1,6 @@
+import type {Node} from 'react';
 // @flow
 import React, {PureComponent} from 'react';
-import type {Node} from 'react';
 import * as PropTypes from 'prop-types';
 import scrollIntoView from 'dom-scroll-into-view';
 
@@ -299,7 +299,10 @@ export default class Typeahead extends PureComponent<Props, State> {
 
     _sortOptionsByGroup = (options: Option[]): Option[] => {
         const groups = this.props.groups;
-        const indexOfGroup = (groupValue: any) => groups.findIndex(group => group.value === groupValue);
+        if (typeof groups === 'undefined') {
+            return options;
+        }
+        const indexOfGroup = (groupValue: any): number => groups.findIndex(group => group.value === groupValue);
         // This is necessary because Array.prototype.sort is not necessarily stable. See:
         // http://www.ecma-international.org/ecma-262/6.0/#sec-array.prototype.sort
         const wrappedOptions = options.map((option, index) => ({option, index}));
@@ -378,8 +381,8 @@ export default class Typeahead extends PureComponent<Props, State> {
     _initializeFromProps = (props: Props): void => {
         this._validateProps(props);
 
-        const {value, options, groups} = props;
-        const sortedOptions = groups === undefined ? options : this._sortOptionsByGroup(options);
+        const {value, options} = props;
+        const sortedOptions = this._sortOptionsByGroup(options);
         this.setState({
             options: sortedOptions,
             highlightedIndex: this._getInitialIndex(props),
