@@ -72,7 +72,8 @@ export default class Typeahead extends PureComponent<Props, State> {
         onChange: PropTypes.func,
         options: PropTypes.arrayOf(PropTypes.shape({
             label: PropTypes.string.isRequired,
-            value: PropTypes.any.isRequired
+            value: PropTypes.any.isRequired,
+            group: PropTypes.any
         })).isRequired,
         placeholder: PropTypes.string,
         renderEmptyGroups: PropTypes.bool,
