@@ -1,5 +1,5 @@
-import type {Node} from 'react';
 // @flow
+import type {Node} from 'react';
 import React, {PureComponent} from 'react';
 import * as PropTypes from 'prop-types';
 import scrollIntoView from 'dom-scroll-into-view';
