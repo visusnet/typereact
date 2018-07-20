@@ -6,7 +6,7 @@
   "author": "Alexander Müller <alexander.mueller@codecentric.de>",
   "license": "MIT",
   "scripts": {
-    "test": "jest",
+    "test": "jest && flow",
     "build": "node_modules/.bin/babel src -d dist",
     "watch": "npm run build -- --watch",
     "lint": "node_modules/.bin/eslint src"
@@ -15,8 +15,7 @@
     "dom-scroll-into-view": "^1.2.1",
     "prop-types": "^15.6.0",
     "react": "^16.2.0",
-    "react-dom": "^16.2.0",
-    "react-popper": "^1.0.0"
+    "react-dom": "^16.2.0"
   },
   "devDependencies": {
     "@types/jest": "^21.1.10",
@@ -28,6 +27,7 @@
     "babel-plugin-transform-require-ignore": "^0.1.1",
     "babel-plugin-transform-runtime": "^6.23.0",
     "babel-preset-env": "^1.6.1",
+    "babel-preset-flow": "^6.23.0",
     "babel-preset-react": "^6.24.1",
     "babel-preset-stage-2": "^6.24.1",
     "coveralls": "^3.0.0",
@@ -38,6 +38,7 @@
     "eslint-plugin-babel": "^4.1.2",
     "eslint-plugin-import": "^2.7.0",
     "eslint-plugin-react": "^7.6.0",
+    "flow-bin": "^0.76.0",
     "jest": "^22.1.4",
     "jsdom": "^11.6.1",
     "node-sass-chokidar": "^0.0.3",

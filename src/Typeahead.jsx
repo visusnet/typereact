@@ -1,11 +1,8 @@
+import type {Node} from 'react';
+// @flow
 import React, {PureComponent} from 'react';
 import * as PropTypes from 'prop-types';
 import scrollIntoView from 'dom-scroll-into-view';
-import {
-    Manager,
-    Popper,
-    Reference
-} from 'react-popper';
 
 const DEFAULT_VALUE = undefined;
 const DEFAULT_LABEL = '';
@@ -18,7 +15,47 @@ const KEY_DOWN = 40;
 const UNKNOWN_VALUE_HIGHLIGHTED = -1;
 const NOTHING_HIGHLIGHTED = undefined;
 
-export default class Typeahead extends PureComponent {
+type Optional<T> = T | typeof undefined;
+
+type Group = {
+    label: string,
+    value: any
+};
+
+type Option = {
+    label: string,
+    value: any,
+    group?: any
+};
+
+type Props = {
+    allowUnknownValue: boolean,
+    autoSelectSingleOption: boolean,
+    className: string,
+    fieldName: string,
+    groups: Optional<Group[]>,
+    id?: string,
+    isClearable: boolean,
+    isDisabled: boolean,
+    minTypedCharacters?: number,
+    onBlur: Function,
+    onChange: Function,
+    options: Option[],
+    placeholder: string,
+    renderEmptyGroups: boolean,
+    tabIndex?: number,
+    value?: any
+};
+
+type State = {
+    options: Option[],
+    highlightedIndex: Optional<number>,
+    isOpen: boolean,
+    typedLabel: string,
+    value: ?any
+};
+
+export default class Typeahead extends PureComponent<Props, State> {
     static propTypes = {
         allowUnknownValue: PropTypes.bool,
         autoSelectSingleOption: PropTypes.bool,
@@ -61,24 +98,26 @@ export default class Typeahead extends PureComponent {
     };
 
     state = {
-        options: undefined,
+        options: [],
         highlightedIndex: NOTHING_HIGHLIGHTED,
         isOpen: false,
         typedLabel: '',
         value: undefined
     };
 
-    elementRefs;
+    elementRefs: {
+        [string]: any
+    };
 
-    _handleFocus = () => {
+    _handleFocus = (): void => {
         this._openIfPossible();
     };
 
-    _handleMouseDown = () => {
+    _handleMouseDown = (): void => {
         this._openIfPossible();
     };
 
-    _handleBlur = () => {
+    _handleBlur = (): void => {
         this._clearIfNecessary(() => {
             const previousValue = this.state.value;
             this._updateValue(() => {
@@ -88,8 +127,8 @@ export default class Typeahead extends PureComponent {
         });
     };
 
-    _handleChange = (e) => {
-        const label = e.target.value || DEFAULT_LABEL;
+    _handleChange = (e: KeyboardEvent): void => {
+        const label = ((e.target: any): HTMLInputElement).value || DEFAULT_LABEL;
         this.setState({
             typedLabel: label
         }, () => {
@@ -106,7 +145,7 @@ export default class Typeahead extends PureComponent {
         });
     };
 
-    _openIfPossible = () => {
+    _openIfPossible = (): void => {
         if (!this.state.isOpen) {
             this.setState((state, props) => ({
                 isOpen: props.minTypedCharacters ? props.minTypedCharacters <= state.typedLabel.length : true,
@@ -115,15 +154,16 @@ export default class Typeahead extends PureComponent {
         }
     };
 
-    _closeIfNecessary = () => {
-        if (this.props.minTypedCharacters) {
+    _closeIfNecessary = (): void => {
+        const minTypedCharacters = this.props.minTypedCharacters;
+        if (minTypedCharacters) {
             this.setState(state => ({
-                isOpen: this.props.minTypedCharacters <= state.typedLabel.length
+                isOpen: minTypedCharacters <= state.typedLabel.length
             }));
         }
     };
 
-    _clearIfNecessary = (afterClear) => {
+    _clearIfNecessary = (afterClear: Function): void => {
         if (this.props.minTypedCharacters && this.props.minTypedCharacters > this.state.typedLabel.length) {
             this._updateValue(afterClear);
         } else {
@@ -131,7 +171,7 @@ export default class Typeahead extends PureComponent {
         }
     };
 
-    _getHighlightedIndexByTypedLabel = () => {
+    _getHighlightedIndexByTypedLabel = (): number | typeof undefined => {
         if (this.props.minTypedCharacters && this.props.minTypedCharacters > this.state.typedLabel.length) {
             return NOTHING_HIGHLIGHTED;
         }
@@ -140,7 +180,7 @@ export default class Typeahead extends PureComponent {
         return typedLabelFoundInOptions ? optionIndex : NOTHING_HIGHLIGHTED;
     };
 
-    _handleKeyDown = (e) => {
+    _handleKeyDown = (e: KeyboardEvent): void => {
         if (e.keyCode === KEY_UP) {
             this.setState({
                 highlightedIndex: this._getPreviousIndex()
@@ -167,7 +207,7 @@ export default class Typeahead extends PureComponent {
         }
     };
 
-    _updateValue = (afterValueUpdated) => {
+    _updateValue = (afterValueUpdated: Function): void => {
         const shouldUpdateValue = this.state.isOpen || this.props.minTypedCharacters;
         if (shouldUpdateValue) {
             const previousValue = this.state.value;
@@ -187,7 +227,7 @@ export default class Typeahead extends PureComponent {
         }
     };
 
-    _createHandleMouseDown = (value, highlightedIndex) => (e) => {
+    _createHandleMouseDown = (value: any, highlightedIndex: number): Function => (e: MouseEvent): void => {
         e.stopPropagation();
         e.preventDefault();
         const previousValue = this.state.value;
@@ -199,36 +239,36 @@ export default class Typeahead extends PureComponent {
         }, this._afterValueChanged(previousValue));
     };
 
-    _afterValueChanged = (previousValue) => () => {
+    _afterValueChanged = (previousValue: any): Function => (): void => {
         if (previousValue !== this.state.value) {
             this._fireOnChange();
         }
     };
 
-    _fireOnChange = () => {
+    _fireOnChange = (): void => {
         this.props.onChange(this.props.fieldName, this.state.value);
     };
 
-    _fireOnBlur = () => {
+    _fireOnBlur = (): void => {
         this.props.onBlur(this.props.fieldName, this.state.value);
     };
 
-    _getValueOfHighlightedOption = () => {
+    _getValueOfHighlightedOption = (): any => {
         const highlightedIndex = this.state.highlightedIndex;
-        if (highlightedIndex === NOTHING_HIGHLIGHTED) {
+        if (typeof highlightedIndex === 'undefined') {
             return DEFAULT_VALUE;
         }
         const filteredOptions = this._getFilteredOptions();
         return filteredOptions[highlightedIndex].value;
     };
 
-    _getInitialIndex = (props) => {
+    _getInitialIndex = (props: Props): Optional<number> => {
         const {options, value} = props;
         const currentOptionIndex = options.findIndex(opt => opt.value === value);
         return currentOptionIndex === -1 ? NOTHING_HIGHLIGHTED : currentOptionIndex;
     };
 
-    _getPreviousIndex = () => {
+    _getPreviousIndex = (): Optional<number> => {
         const currentOptionIndex = this.state.highlightedIndex;
         const potentialPreviousOptionIndex = currentOptionIndex === undefined ? 0 : currentOptionIndex - 1;
         const hasPreviousOption = potentialPreviousOptionIndex >= 0;
@@ -238,7 +278,7 @@ export default class Typeahead extends PureComponent {
         return hasPreviousOption ? potentialPreviousOptionIndex : currentOptionIndex;
     };
 
-    _getNextIndex = () => {
+    _getNextIndex = (): Optional<number> => {
         const currentOptionIndex = this.state.highlightedIndex;
         const potentialNextOptionIndex = currentOptionIndex === undefined ? this._getFirstGroupsFirstOptionIndex()
             : currentOptionIndex + 1;
@@ -246,15 +286,23 @@ export default class Typeahead extends PureComponent {
         return hasNextOption ? potentialNextOptionIndex : currentOptionIndex;
     };
 
-    _getFirstGroupsFirstOptionIndex = () => this.props.groups === undefined ? 0 : this.state.options.findIndex(
-        option => option.group === this.props.groups[0].value);
+    _getFirstGroupsFirstOptionIndex = (): number => {
+        const groups = this.props.groups;
+        return typeof groups !== 'undefined' && Array.isArray(groups) && groups.length > 0
+            ? this.state.options.findIndex(option => option.group === groups[0].value)
+            : 0;
+    };
 
-    _getLabel = () => {
+    _getLabel = (): string => {
         return this.state.typedLabel;
     };
 
-    _sortOptionsByGroup = (options) => {
-        const indexOfGroup = groupValue => this.props.groups.findIndex(group => group.value === groupValue);
+    _sortOptionsByGroup = (options: Option[]): Option[] => {
+        const groups = this.props.groups;
+        if (typeof groups === 'undefined') {
+            return options;
+        }
+        const indexOfGroup = (groupValue: any): number => groups.findIndex(group => group.value === groupValue);
         // This is necessary because Array.prototype.sort is not necessarily stable. See:
         // http://www.ecma-international.org/ecma-262/6.0/#sec-array.prototype.sort
         const wrappedOptions = options.map((option, index) => ({option, index}));
@@ -266,12 +314,12 @@ export default class Typeahead extends PureComponent {
         return wrappedOptions.map(wrappedOption => wrappedOption.option);
     };
 
-    _typedLabelHasText = () => this.state.typedLabel;
+    _typedLabelHasText = (): boolean => Boolean(this.state.typedLabel);
 
-    _byTypedLabel = option => this._typedLabelHasText() &&
+    _byTypedLabel = (option: Option | Group) => this._typedLabelHasText() &&
         option.label.toLowerCase().includes(this.state.typedLabel.toLowerCase());
 
-    _byGroupAndTypedLabel = option => {
+    _byGroupAndTypedLabel = (option: Option) => {
         if (this.props.groups !== undefined) {
             const matchingGroupValues = this.props.groups.filter(this._byTypedLabel).map(group => group.value);
             if (matchingGroupValues.includes(option.group)) {
@@ -281,7 +329,7 @@ export default class Typeahead extends PureComponent {
         return this._byTypedLabel(option);
     };
 
-    _getFilteredOptions = () => {
+    _getFilteredOptions = (): Option[] => {
         const typedLabelMatchesCurrentOptionLabel = this.state.typedLabel === this._getLabelByValue(this.state.value);
         let options;
         if (typedLabelMatchesCurrentOptionLabel) {
@@ -293,7 +341,7 @@ export default class Typeahead extends PureComponent {
         return options;
     };
 
-    _getLabelByValue = (value, options = this.props.options) => {
+    _getLabelByValue = (value: any, options: Option[] = this.props.options): string => {
         const option = options.find(opt => opt.value === value);
         if (option) {
             return option.label;
@@ -303,7 +351,7 @@ export default class Typeahead extends PureComponent {
         return DEFAULT_LABEL;
     };
 
-    _clearValue = () => {
+    _clearValue = (): void => {
         this.setState({
             value: DEFAULT_VALUE,
             typedLabel: DEFAULT_LABEL,
@@ -312,18 +360,17 @@ export default class Typeahead extends PureComponent {
         }, this._afterValueChanged(this.state.value));
     };
 
-    _validateProps = (props) => {
+    _validateProps = (props: Props): void => {
         const {groups, options} = props;
 
-        const groupsEnabled = groups !== undefined;
-        const optionWithoutGroupExists = groupsEnabled &&
+        const optionWithoutGroupExists = typeof groups !== 'undefined' &&
             options.some(option => !option.hasOwnProperty('group'));
 
         if (optionWithoutGroupExists) {
             throw new Error('There is at least one option without a group property.');
         }
 
-        const optionWithMissingGroupExists = groupsEnabled &&
+        const optionWithMissingGroupExists = typeof groups !== 'undefined' &&
             options.some(option => !groups.some(group => group.value === option.group));
 
         if (optionWithMissingGroupExists) {
@@ -331,11 +378,11 @@ export default class Typeahead extends PureComponent {
         }
     };
 
-    _initializeFromProps = (props) => {
+    _initializeFromProps = (props: Props): void => {
         this._validateProps(props);
 
-        const {value, options, groups} = props;
-        const sortedOptions = groups === undefined ? options : this._sortOptionsByGroup(options);
+        const {value, options} = props;
+        const sortedOptions = this._sortOptionsByGroup(options);
         this.setState({
             options: sortedOptions,
             highlightedIndex: this._getInitialIndex(props),
@@ -353,12 +400,12 @@ export default class Typeahead extends PureComponent {
         });
     };
 
-    _isUnknownValue = () => this._typedLabelHasText() &&
+    _isUnknownValue = (): boolean => this._typedLabelHasText() &&
         !this._getFilteredOptions().some(option => option.label === this.state.typedLabel);
 
-    _getAbsoluteIndex = option => this.state.options.findIndex(opt => opt.value === option.value);
+    _getAbsoluteIndex = (option: Option): number => this.state.options.findIndex(opt => opt.value === option.value);
 
-    _relativeToAbsoluteIndex = (relativeIndex) => {
+    _relativeToAbsoluteIndex = (relativeIndex: number): number => {
         const highlightedOption = this._getFilteredOptions()[relativeIndex];
         return this.state.options.indexOf(highlightedOption);
     };
@@ -372,19 +419,19 @@ export default class Typeahead extends PureComponent {
         }
     };
 
-    componentWillMount() {
+    componentWillMount(): void {
         this.elementRefs = {};
     }
 
-    componentDidMount() {
+    componentDidMount(): void {
         this._initializeFromProps(this.props);
     }
 
-    componentWillReceiveProps(nextProps) {
+    componentWillReceiveProps(nextProps: Props): void {
         this._initializeFromProps(nextProps);
     }
 
-    renderNoOptionsMessage() {
+    renderNoOptionsMessage(): Node {
         if (!this.props.allowUnknownValue && this._getFilteredOptions().length === 0 &&
             this.state.typedLabel.length !== 0) {
             return (
@@ -396,7 +443,7 @@ export default class Typeahead extends PureComponent {
         }
     }
 
-    renderUnknownValueOption() {
+    renderUnknownValueOption(): Node {
         if (this.props.allowUnknownValue && this._isUnknownValue()) {
             const option = {
                 label: this.state.typedLabel,
@@ -407,11 +454,11 @@ export default class Typeahead extends PureComponent {
     }
 
     // noinspection JSMethodCanBeStatic
-    renderNewOptionMarker() {
+    renderNewOptionMarker(): Node {
         return (<span className="typeahead__option__new_option"> (+) </span>);
     }
 
-    renderOption = (option, absoluteIndex) => {
+    renderOption = (option: Option, absoluteIndex: number): Node => {
         return (
             <div ref={element => this.elementRefs[`option_${absoluteIndex}`] = element}
                 key={`typeahead__option__${option.value}`}
@@ -427,7 +474,7 @@ export default class Typeahead extends PureComponent {
         );
     };
 
-    renderGroup = (group) => {
+    renderGroup = (group: Group): Node => {
         const filteredOptions = this._getFilteredOptions();
         const groupOptions = filteredOptions.filter(option => option.group === group.value);
 
@@ -443,72 +490,58 @@ export default class Typeahead extends PureComponent {
         );
     };
 
-    renderGroups() {
+    renderGroups(): ?Node[] {
         return this.props.groups.map(this.renderGroup);
     }
 
-    renderMenu() {
+    renderMenu(): Node {
         if (this.state.isOpen) {
             return (
-                <Popper>
-                    {({ref, style, placement, arrowProps}) => (
-                        <div ref={ref} style={style} data-placement={placement} className="typeahead__options">
-                            <div ref={element => this.elementRefs['menu'] = element}>
-                                {this.renderNoOptionsMessage()}
-                                {this.renderUnknownValueOption()}
-                                {this.props.groups === undefined ? this._getFilteredOptions().map(
-                                    option => this.renderOption(option, this._getAbsoluteIndex(option)))
-                                    : this.renderGroups()}
-                                <div ref={arrowProps.ref} style={arrowProps.style}/>
-                            </div>
-                        </div>
-                    )}
-                </Popper>
+                <div ref={element => this.elementRefs['menu'] = element} className="typeahead__options">
+                    {this.renderNoOptionsMessage()}
+                    {this.renderUnknownValueOption()}
+                    {this.props.groups === undefined ? this._getFilteredOptions().map(
+                        option => this.renderOption(option, this._getAbsoluteIndex(option))) : this.renderGroups()}
+                </div>
             );
         }
     }
 
-    _handleClearClick = (e) => {
+    _handleClearClick = (e: MouseEvent): void => {
         e.preventDefault();
         this._clearValue();
     };
 
-    renderClearButton() {
+    renderClearButton(): Node {
         if (this.props.isClearable && !this.props.isDisabled && this.state.value) {
             return (
-                <button className="typeahead__clear" href="/#" onClick={this._handleClearClick}/>
+                <button className="typeahead__clear" onClick={this._handleClearClick}/>
             );
         }
     }
 
-    render() {
+    render(): Node {
         const idProp = this.props.id ? {id: this.props.id} : {};
         const tabIndexProp = this.props.tabIndex ? {tabIndex: this.props.tabIndex} : {};
         const className = this.props.className;
         return (
-            <Manager tag={false}>
-                <div className={className}>
-                    <Reference>
-                        {({ref}) => (
-                            <input ref={ref}
-                                {...idProp}
-                                {...tabIndexProp}
-                                disabled={this.props.isDisabled}
-                                name={this.props.fieldName}
-                                onFocus={this._handleFocus}
-                                onBlur={this._handleBlur}
-                                onChange={this._handleChange}
-                                onKeyDown={this._handleKeyDown}
-                                onMouseDown={this._handleMouseDown}
-                                placeholder={this.props.placeholder}
-                                value={this._getLabel()}
-                            />
-                        )}
-                    </Reference>
-                    {this.renderClearButton()}
-                    {this.renderMenu()}
-                </div>
-            </Manager>
+            <div className={className}>
+                <input
+                    {...idProp}
+                    {...tabIndexProp}
+                    disabled={this.props.isDisabled}
+                    name={this.props.fieldName}
+                    onFocus={this._handleFocus}
+                    onBlur={this._handleBlur}
+                    onChange={this._handleChange}
+                    onKeyDown={this._handleKeyDown}
+                    onMouseDown={this._handleMouseDown}
+                    placeholder={this.props.placeholder}
+                    value={this._getLabel()}
+                />
+                {this.renderClearButton()}
+                {this.renderMenu()}
+            </div>
         );
     }
 }
