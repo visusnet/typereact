@@ -1,6 +1,6 @@
 # Typereact
 
-[![CircleCI](https://circleci.com/gh/visusnet/typereact.svg?style=shield&circle-token=80ba425931ad61cde5a4ad991aea29aa65c51a30)](https://circleci.com/gh/visusnet/typereact) [![Travis](https://travis-ci.org/visusnet/typereact.svg?branch=master)](https://travis-ci.org/visusnet/typereact) [![npm version](https://badge.fury.io/js/typereact.svg)](https://badge.fury.io/js/typereact) [![Coverage Status](https://coveralls.io/repos/github/visusnet/typereact/badge.svg?branch=master)](https://coveralls.io/github/visusnet/typereact?branch=master) [![Greenkeeper badge](https://badges.greenkeeper.io/visusnet/typereact.svg)](https://greenkeeper.io/)
+[![CircleCI](https://circleci.com/gh/visusnet/typereact.svg?style=shield&circle-token=80ba425931ad61cde5a4ad991aea29aa65c51a30)](https://circleci.com/gh/visusnet/typereact) [![Travis](https://travis-ci.org/visusnet/typereact.svg?branch=master)](https://travis-ci.org/visusnet/typereact) [![npm version](https://badge.fury.io/js/typereact.svg)](https://badge.fury.io/js/typereact) [![Coverage Status](https://coveralls.io/repos/github/visusnet/typereact/badge.svg?branch=master)](https://coveralls.io/github/visusnet/typereact?branch=master)
 
 Typereact is a simple React typeahead component that supports grouped entries.
 
