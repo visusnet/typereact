@@ -6,7 +6,7 @@
   "author": "Alexander Müller <alexander.mueller@codecentric.de>",
   "license": "MIT",
   "scripts": {
-    "test": "jest",
+    "test": "jest && flow",
     "build": "node_modules/.bin/babel src -d dist",
     "watch": "npm run build -- --watch",
     "lint": "node_modules/.bin/eslint src"
