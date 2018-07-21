@@ -1,3 +1,4 @@
+// @flow
 import type {Node} from 'react';
 import React, {PureComponent} from 'react';
 import * as PropTypes from 'prop-types';
@@ -28,6 +29,11 @@ type Option = {
     group?: any
 };
 
+type WrappedOption = {
+    option: Option,
+    index: number
+};
+
 type Props = {
     allowUnknownValue: boolean,
     autoSelectSingleOption: boolean,
@@ -51,15 +57,18 @@ type State = {
     highlightedIndex: Optional<number>,
     isOpen: boolean,
     typedLabel: string,
-    value: ?any
+    value: ?any,
+    props: ?Props
 };
 
-let INITIAL_STATE = {
+const INITIAL_STATE: State = {
     highlightedIndex: NOTHING_HIGHLIGHTED,
     isOpen: false,
     typedLabel: '',
-    value: undefined
+    value: undefined,
+    props: undefined
 };
+
 export default class Typeahead extends PureComponent<Props, State> {
     static propTypes = {
         allowUnknownValue: PropTypes.bool,
@@ -106,12 +115,12 @@ export default class Typeahead extends PureComponent<Props, State> {
     state = INITIAL_STATE;
 
     _getSortedOptions = memoize(
-        (props: Props = this.props) => Typeahead._sortOptionsByGroup(props.options, props.groups)
+        (props: Props = this.props) => _sortOptionsByGroup(props.options, props.groups)
     );
 
     elementRefs: {
         [string]: any
-    };
+    } = {};
 
     _handleFocus = (): void => {
         this._openIfPossible();
@@ -297,26 +306,6 @@ export default class Typeahead extends PureComponent<Props, State> {
             : 0;
     };
 
-    _getLabel = (): string => {
-        return this.state.typedLabel;
-    };
-
-    static _sortOptionsByGroup = (options: Option[], groups: Group[]): Option[] => {
-        if (typeof groups === 'undefined') {
-            return options;
-        }
-        const indexOfGroup = (groupValue: any): number => groups.findIndex(group => group.value === groupValue);
-        // This is necessary because Array.prototype.sort is not necessarily stable. See:
-        // http://www.ecma-international.org/ecma-262/6.0/#sec-array.prototype.sort
-        const wrappedOptions = options.map((option, index) => ({option, index}));
-        wrappedOptions.sort((wrappedOptionA, wrappedOptionB) => {
-            const groupComparison = indexOfGroup(wrappedOptionA.option.group) -
-                indexOfGroup(wrappedOptionB.option.group);
-            return groupComparison === 0 ? wrappedOptionA.index - wrappedOptionB.index : groupComparison;
-        });
-        return wrappedOptions.map(wrappedOption => wrappedOption.option);
-    };
-
     _typedLabelHasText = (): boolean => Boolean(this.state.typedLabel);
 
     _byTypedLabel = (option: Option | Group) => this._typedLabelHasText() &&
@@ -378,18 +367,24 @@ export default class Typeahead extends PureComponent<Props, State> {
         }
     };
 
-    _initializeFromProps = (props: Props): void => {
+    static getDerivedStateFromProps(props: Props, prevState: State): ?$Shape<State> {
         Typeahead._validateProps(props);
 
-        const {value, options} = props;
-        const shouldAutoSelectSingleOption = props.autoSelectSingleOption && options.length === 1;
-        const actualValue = shouldAutoSelectSingleOption ? options[0].value : value;
-        this.setState({
-            highlightedIndex: shouldAutoSelectSingleOption ? 0 : Typeahead._getInitialIndex(props),
-            value: actualValue,
-            typedLabel: Typeahead._getLabelByValue(actualValue, props.options, props.allowUnknownValue)
-        });
-    };
+        const {options} = props;
+        if (typeof prevState.props === 'undefined' || prevState.props !== props) {
+            const shouldAutoSelectSingleOption = props.autoSelectSingleOption && options.length === 1;
+            const highlightedIndex = shouldAutoSelectSingleOption ? 0 : Typeahead._getInitialIndex(props);
+            const value = shouldAutoSelectSingleOption ? options[0].value : props.value;
+            const typedLabel = Typeahead._getLabelByValue(value, props.options, props.allowUnknownValue);
+            return {
+                highlightedIndex,
+                value,
+                typedLabel,
+                props
+            };
+        }
+        return null;
+    }
 
     _isUnknownValue = (): boolean => this._typedLabelHasText() &&
         !this._getFilteredOptions().some(option => option.label === this.state.typedLabel);
@@ -403,7 +398,7 @@ export default class Typeahead extends PureComponent<Props, State> {
     };
 
     _scrollHighlightedOptionIntoView = () => {
-        if (this.state.isOpen && this.state.highlightedIndex !== NOTHING_HIGHLIGHTED &&
+        if (this.state.isOpen && typeof this.state.highlightedIndex !== 'undefined' &&
             this.state.highlightedIndex !== UNKNOWN_VALUE_HIGHLIGHTED) {
             const optionNode = this.elementRefs[`option_${this._relativeToAbsoluteIndex(this.state.highlightedIndex)}`];
             const menuNode = this.elementRefs['menu'];
@@ -411,24 +406,7 @@ export default class Typeahead extends PureComponent<Props, State> {
         }
     };
 
-    componentWillMount(): void {
-        this.elementRefs = {};
-    }
-
-    componentDidMount(): void {
-        this._initializeFromProps(this.props);
-        const {autoSelectSingleOption, options} = this.props;
-        if (autoSelectSingleOption && options.length === 1) {
-            const valueOfSingleOption = options[0].value;
-            this._fireOnChange(valueOfSingleOption);
-        }
-    }
-
-    componentWillReceiveProps(nextProps: Props): void {
-        this._initializeFromProps(nextProps);
-    }
-
-    componentDidUpdate(prevProps: Props): void {
+    _fireOnChangeIfSingleOptionWasUpdated = (prevProps: Props) => {
         const {autoSelectSingleOption, options} = this.props;
         const haveOptionsChanged = prevProps.options !== options;
         const hasAutoSelectSingleOptionChanged = prevProps.autoSelectSingleOption !== autoSelectSingleOption;
@@ -437,6 +415,18 @@ export default class Typeahead extends PureComponent<Props, State> {
             const valueOfSingleOption = options[0].value;
             this._fireOnChange(valueOfSingleOption);
         }
+    };
+
+    componentDidMount(): void {
+        const {autoSelectSingleOption, options} = this.props;
+        if (autoSelectSingleOption && options.length === 1) {
+            const valueOfSingleOption = options[0].value;
+            this._fireOnChange(valueOfSingleOption);
+        }
+    }
+
+    componentDidUpdate(prevProps: Props): void {
+        this._fireOnChangeIfSingleOptionWasUpdated(prevProps);
     }
 
     renderNoOptionsMessage(): Node {
@@ -467,13 +457,15 @@ export default class Typeahead extends PureComponent<Props, State> {
     }
 
     renderOption = (option: Option, absoluteIndex: number): Node => {
+        const isHighlighted = typeof this.state.highlightedIndex !== 'undefined'
+            && absoluteIndex === this._relativeToAbsoluteIndex(this.state.highlightedIndex);
         return (
             <div ref={element => this.elementRefs[`option_${absoluteIndex}`] = element}
                 key={`typeahead__option__${option.value}`}
                 className="typeahead__option"
                 data-index={absoluteIndex}
                 data-value={option.value}
-                data-highlighted={absoluteIndex === this._relativeToAbsoluteIndex(this.state.highlightedIndex)}
+                data-highlighted={isHighlighted}
                 data-group={option.group}
                 onMouseDown={this._createHandleMouseDown(option.value, absoluteIndex)}>
                 {option.label}
@@ -498,8 +490,8 @@ export default class Typeahead extends PureComponent<Props, State> {
         );
     };
 
-    renderGroups(): ?Node[] {
-        return this.props.groups.map(this.renderGroup);
+    renderGroups(groups: Group[]): ?Node[] {
+        return groups.map(this.renderGroup);
     }
 
     renderMenu(): Node {
@@ -508,8 +500,11 @@ export default class Typeahead extends PureComponent<Props, State> {
                 <div ref={element => this.elementRefs['menu'] = element} className="typeahead__options">
                     {this.renderNoOptionsMessage()}
                     {this.renderUnknownValueOption()}
-                    {this.props.groups === undefined ? this._getFilteredOptions().map(
-                        option => this.renderOption(option, this._getAbsoluteIndex(option))) : this.renderGroups()}
+                    {typeof this.props.groups === 'undefined'
+                        ? this._getFilteredOptions()
+                            .map(option => this.renderOption(option, this._getAbsoluteIndex(option)))
+                        : this.renderGroups(this.props.groups)
+                    }
                 </div>
             );
         }
@@ -545,11 +540,42 @@ export default class Typeahead extends PureComponent<Props, State> {
                     onKeyDown={this._handleKeyDown}
                     onMouseDown={this._handleMouseDown}
                     placeholder={this.props.placeholder}
-                    value={this._getLabel()}
+                    value={this.state.typedLabel}
                 />
                 {this.renderClearButton()}
                 {this.renderMenu()}
             </div>
         );
     }
+}
+
+function _sortOptionsByGroup(options: Option[], groups: Optional<Group[]>): Option[] {
+    if (typeof groups === 'undefined') {
+        return options;
+    }
+    // This is necessary because Array.prototype.sort is not necessarily stable. See:
+    // http://www.ecma-international.org/ecma-262/6.0/#sec-array.prototype.sort
+    const wrappedOptions = options.map(_wrapOption);
+    wrappedOptions.sort(_compareOptions(groups));
+    return wrappedOptions.map(_unwrapOption);
+}
+
+function _indexOfGroup(groups: Group[], groupValue: any): number {
+    return groups.findIndex(group => group.value === groupValue);
+}
+
+function _wrapOption(option: Option, index: number): WrappedOption {
+    return {option, index};
+}
+
+function _unwrapOption(wrappedOption: WrappedOption): Option {
+    return wrappedOption.option;
+}
+
+function _compareOptions(groups: Group[]): (WrappedOption, WrappedOption) => number {
+    return (wrappedOptionA: WrappedOption, wrappedOptionB: WrappedOption) => {
+        const groupComparison = _indexOfGroup(groups, wrappedOptionA.option.group) -
+            _indexOfGroup(groups, wrappedOptionB.option.group);
+        return groupComparison === 0 ? wrappedOptionA.index - wrappedOptionB.index : groupComparison;
+    };
 }
