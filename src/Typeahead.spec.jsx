@@ -820,6 +820,19 @@ describe('Typeahead should', () => {
         expect(handleChange.mock.calls[0][1]).toEqual('value');
     });
 
+    it('call onChange with the first option when autoSelectSingleOption is true and props changed', () => {
+        const handleChange = jest.fn();
+        const wrapper = mount(
+            <Typeahead fieldName="fieldName" options={[option]} onChange={handleChange}/>
+        );
+        expect(handleChange.mock.calls.length).toBe(0);
+        wrapper.setProps({
+            autoSelectSingleOption: true
+        });
+        expect(handleChange.mock.calls.length).toBe(1);
+        expect(handleChange.mock.calls[0][1]).toEqual('value');
+    });
+
     it('render groups when groups prop is provided', () => {
         const wrapper = mount(<Typeahead fieldName="fieldName" options={optionsWithGroups} groups={groups}/>);
         wrapper.find('input').simulate('focus');

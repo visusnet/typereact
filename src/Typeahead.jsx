@@ -245,8 +245,8 @@ export default class Typeahead extends PureComponent<Props, State> {
         }
     };
 
-    _fireOnChange = (): void => {
-        this.props.onChange(this.props.fieldName, this.state.value);
+    _fireOnChange = (value: any = this.state.value): void => {
+        this.props.onChange(this.props.fieldName, value);
     };
 
     _fireOnBlur = (): void => {
@@ -383,20 +383,13 @@ export default class Typeahead extends PureComponent<Props, State> {
 
         const {value, options} = props;
         const sortedOptions = this._sortOptionsByGroup(options);
+        const shouldAutoSelectSingleOption = props.autoSelectSingleOption && options.length === 1;
+        const actualValue = shouldAutoSelectSingleOption ? options[0].value : value;
         this.setState({
             options: sortedOptions,
-            highlightedIndex: this._getInitialIndex(props),
-            value,
-            typedLabel: this._getLabelByValue(value, sortedOptions)
-        }, () => {
-            if (props.autoSelectSingleOption && options.length === 1) {
-                const valueOfSingleOption = options[0].value;
-                this.setState({
-                    highlightedIndex: 0,
-                    value: valueOfSingleOption,
-                    typedLabel: this._getLabelByValue(valueOfSingleOption)
-                }, this._afterValueChanged(this.state.value));
-            }
+            highlightedIndex: shouldAutoSelectSingleOption ? 0 : this._getInitialIndex(props),
+            value: actualValue,
+            typedLabel: this._getLabelByValue(actualValue, sortedOptions)
         });
     };
 
@@ -425,10 +418,26 @@ export default class Typeahead extends PureComponent<Props, State> {
 
     componentDidMount(): void {
         this._initializeFromProps(this.props);
+        const {autoSelectSingleOption, options} = this.props;
+        if (autoSelectSingleOption && options.length === 1) {
+            const valueOfSingleOption = options[0].value;
+            this._fireOnChange(valueOfSingleOption);
+        }
     }
 
     componentWillReceiveProps(nextProps: Props): void {
         this._initializeFromProps(nextProps);
+    }
+
+    componentDidUpdate(prevProps: Props): void {
+        const {autoSelectSingleOption, options} = this.props;
+        const haveOptionsChanged = prevProps.options !== options;
+        const hasAutoSelectSingleOptionChanged = prevProps.autoSelectSingleOption !== autoSelectSingleOption;
+        const shouldFireOnChange = haveOptionsChanged || hasAutoSelectSingleOptionChanged;
+        if (shouldFireOnChange && autoSelectSingleOption && options.length === 1) {
+            const valueOfSingleOption = options[0].value;
+            this._fireOnChange(valueOfSingleOption);
+        }
     }
 
     renderNoOptionsMessage(): Node {
