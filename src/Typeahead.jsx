@@ -2,6 +2,7 @@ import type {Node} from 'react';
 import React, {PureComponent} from 'react';
 import * as PropTypes from 'prop-types';
 import scrollIntoView from 'dom-scroll-into-view';
+import memoize from 'memoize-one';
 
 const DEFAULT_VALUE = undefined;
 const DEFAULT_LABEL = '';
@@ -47,13 +48,18 @@ type Props = {
 };
 
 type State = {
-    options: Option[],
     highlightedIndex: Optional<number>,
     isOpen: boolean,
     typedLabel: string,
     value: ?any
 };
 
+let INITIAL_STATE = {
+    highlightedIndex: NOTHING_HIGHLIGHTED,
+    isOpen: false,
+    typedLabel: '',
+    value: undefined
+};
 export default class Typeahead extends PureComponent<Props, State> {
     static propTypes = {
         allowUnknownValue: PropTypes.bool,
@@ -97,13 +103,11 @@ export default class Typeahead extends PureComponent<Props, State> {
         value: DEFAULT_VALUE
     };
 
-    state = {
-        options: [],
-        highlightedIndex: NOTHING_HIGHLIGHTED,
-        isOpen: false,
-        typedLabel: '',
-        value: undefined
-    };
+    state = INITIAL_STATE;
+
+    _getSortedOptions = memoize(
+        (props: Props = this.props) => Typeahead._sortOptionsByGroup(props.options, props.groups)
+    );
 
     elementRefs: {
         [string]: any
@@ -220,7 +224,7 @@ export default class Typeahead extends PureComponent<Props, State> {
                 isOpen: false,
                 highlightedIndex: undefined,
                 value: nextValue,
-                typedLabel: this._getLabelByValue(nextValue)
+                typedLabel: Typeahead._getLabelByValue(nextValue, this.props.options, this.props.allowUnknownValue)
             }, afterValueUpdated);
         } else {
             afterValueUpdated();
@@ -234,7 +238,7 @@ export default class Typeahead extends PureComponent<Props, State> {
         this.setState({
             highlightedIndex,
             isOpen: false,
-            typedLabel: this._getLabelByValue(value),
+            typedLabel: Typeahead._getLabelByValue(value, this.props.options, this.props.allowUnknownValue),
             value
         }, this._afterValueChanged(previousValue));
     };
@@ -262,7 +266,7 @@ export default class Typeahead extends PureComponent<Props, State> {
         return filteredOptions[highlightedIndex].value;
     };
 
-    _getInitialIndex = (props: Props): Optional<number> => {
+    static _getInitialIndex = (props: Props): Optional<number> => {
         const {options, value} = props;
         const currentOptionIndex = options.findIndex(opt => opt.value === value);
         return currentOptionIndex === -1 ? NOTHING_HIGHLIGHTED : currentOptionIndex;
@@ -289,7 +293,7 @@ export default class Typeahead extends PureComponent<Props, State> {
     _getFirstGroupsFirstOptionIndex = (): number => {
         const groups = this.props.groups;
         return typeof groups !== 'undefined' && Array.isArray(groups) && groups.length > 0
-            ? this.state.options.findIndex(option => option.group === groups[0].value)
+            ? this._getSortedOptions().findIndex(option => option.group === groups[0].value)
             : 0;
     };
 
@@ -297,8 +301,7 @@ export default class Typeahead extends PureComponent<Props, State> {
         return this.state.typedLabel;
     };
 
-    _sortOptionsByGroup = (options: Option[]): Option[] => {
-        const groups = this.props.groups;
+    static _sortOptionsByGroup = (options: Option[], groups: Group[]): Option[] => {
         if (typeof groups === 'undefined') {
             return options;
         }
@@ -330,22 +333,19 @@ export default class Typeahead extends PureComponent<Props, State> {
     };
 
     _getFilteredOptions = (): Option[] => {
-        const typedLabelMatchesCurrentOptionLabel = this.state.typedLabel === this._getLabelByValue(this.state.value);
-        let options;
-        if (typedLabelMatchesCurrentOptionLabel) {
-            options = this.state.options;
-        } else {
-            options = this.state.options.filter(this._byGroupAndTypedLabel);
-        }
-
-        return options;
+        const {options, allowUnknownValue} = this.props;
+        const currentOptionLabel = Typeahead._getLabelByValue(this.state.value, options, allowUnknownValue);
+        const typedLabelMatchesCurrentOptionLabel = this.state.typedLabel === currentOptionLabel;
+        return typedLabelMatchesCurrentOptionLabel
+            ? this._getSortedOptions()
+            : this._getSortedOptions().filter(this._byGroupAndTypedLabel);
     };
 
-    _getLabelByValue = (value: any, options: Option[] = this.props.options): string => {
+    static _getLabelByValue = (value: any, options: Option[], allowUnknownValue: boolean): string => {
         const option = options.find(opt => opt.value === value);
         if (option) {
             return option.label;
-        } else if (this.props.allowUnknownValue && value !== undefined) {
+        } else if (allowUnknownValue && value !== undefined) {
             return value;
         }
         return DEFAULT_LABEL;
@@ -360,7 +360,7 @@ export default class Typeahead extends PureComponent<Props, State> {
         }, this._afterValueChanged(this.state.value));
     };
 
-    _validateProps = (props: Props): void => {
+    static _validateProps = (props: Props): void => {
         const {groups, options} = props;
 
         const optionWithoutGroupExists = typeof groups !== 'undefined' &&
@@ -379,28 +379,27 @@ export default class Typeahead extends PureComponent<Props, State> {
     };
 
     _initializeFromProps = (props: Props): void => {
-        this._validateProps(props);
+        Typeahead._validateProps(props);
 
         const {value, options} = props;
-        const sortedOptions = this._sortOptionsByGroup(options);
         const shouldAutoSelectSingleOption = props.autoSelectSingleOption && options.length === 1;
         const actualValue = shouldAutoSelectSingleOption ? options[0].value : value;
         this.setState({
-            options: sortedOptions,
-            highlightedIndex: shouldAutoSelectSingleOption ? 0 : this._getInitialIndex(props),
+            highlightedIndex: shouldAutoSelectSingleOption ? 0 : Typeahead._getInitialIndex(props),
             value: actualValue,
-            typedLabel: this._getLabelByValue(actualValue, sortedOptions)
+            typedLabel: Typeahead._getLabelByValue(actualValue, props.options, props.allowUnknownValue)
         });
     };
 
     _isUnknownValue = (): boolean => this._typedLabelHasText() &&
         !this._getFilteredOptions().some(option => option.label === this.state.typedLabel);
 
-    _getAbsoluteIndex = (option: Option): number => this.state.options.findIndex(opt => opt.value === option.value);
+    _getAbsoluteIndex = (option: Option): number => this._getSortedOptions()
+        .findIndex(opt => opt.value === option.value);
 
     _relativeToAbsoluteIndex = (relativeIndex: number): number => {
         const highlightedOption = this._getFilteredOptions()[relativeIndex];
-        return this.state.options.indexOf(highlightedOption);
+        return this._getSortedOptions().indexOf(highlightedOption);
     };
 
     _scrollHighlightedOptionIntoView = () => {
