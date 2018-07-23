@@ -252,6 +252,11 @@ export default class Typeahead extends PureComponent<Props, State> {
         }, this._afterValueChanged(previousValue));
     };
 
+    _handleClearClick = (e: MouseEvent): void => {
+        e.preventDefault();
+        this._clearValue();
+    };
+
     _afterValueChanged = (previousValue: any): Function => (): void => {
         if (previousValue !== this.state.value) {
             this._fireOnChange();
@@ -509,11 +514,6 @@ export default class Typeahead extends PureComponent<Props, State> {
             );
         }
     }
-
-    _handleClearClick = (e: MouseEvent): void => {
-        e.preventDefault();
-        this._clearValue();
-    };
 
     renderClearButton(): Node {
         if (this.props.isClearable && !this.props.isDisabled && this.state.value) {
