@@ -38,6 +38,8 @@
     min-width: calc(100% - 2px);
     max-width: 100%;
     padding: 16px 0 24px; }
+    .typeahead__options .ReactVirtualized__List:active, .typeahead__options .ReactVirtualized__List:focus {
+      outline: 0; }
   .typeahead__option {
     font-family: 'Open Sans', sans-serif;
     font-weight: 400;

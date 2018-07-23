@@ -66,6 +66,10 @@ $separatorColor: $black20;
         min-width: calc(100% - 2px);
         max-width: 100%;
         padding: 16px 0 24px;
+
+        .ReactVirtualized__List:active, .ReactVirtualized__List:focus {
+            outline: 0;
+        }
     }
 
     &__option {

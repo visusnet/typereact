@@ -20,8 +20,8 @@ class App extends Component {
             {label: 'Sixth Label', value: 'value6', group: 'group3'},
             {label: 'Seventh Label', value: 'value7', group: 'group1'}
         ];
-        const GROUP_COUNT = 10;
-        const OPTION_COUNT = 100;
+        const OPTION_COUNT = 10000;
+        const GROUP_COUNT = OPTION_COUNT / 100;
         const generateGroups = () => {
             const generatedGroups = [];
             for (let groupIndex = 1; groupIndex <= GROUP_COUNT; groupIndex++) {
