@@ -9,6 +9,14 @@ import Typeahead from './Typeahead';
 
 Enzyme.configure({adapter: new Adapter()});
 
+function MockAutoSizer({children}: any) {
+    return <div>{children({width: 1024, height: 768})}</div>;
+}
+
+jest.mock('react-virtualized/dist/commonjs/AutoSizer', () => {
+    return MockAutoSizer;
+});
+
 const KEY_TAB = 9;
 const KEY_ENTER = 13;
 const KEY_NUMPAD_ENTER = 176;
@@ -212,6 +220,24 @@ describe('Typeahead should', () => {
         wrapper.find('input').simulate('focus');
         wrapper.find('input').simulate('blur');
 
+        expect(wrapper.state('isOpen')).toBe(false);
+    });
+
+    it('not close menu while scrolling even though focus is lost', () => {
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={options}/>);
+        wrapper.find('input').simulate('focus');
+        wrapper.find('.typeahead__options').simulate('mouseDown');
+        wrapper.find('input').simulate('blur');
+        expect(wrapper.state('isOpen')).toBe(true);
+    });
+
+    it('close menu after scrolling on focus lost', () => {
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={options}/>);
+        wrapper.find('input').simulate('focus');
+        wrapper.find('.typeahead__options').simulate('mouseDown');
+        wrapper.find('input').simulate('blur');
+        wrapper.find('.typeahead__options').simulate('mouseUp');
+        wrapper.find('input').simulate('blur');
         expect(wrapper.state('isOpen')).toBe(false);
     });
 

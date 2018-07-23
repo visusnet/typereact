@@ -2,9 +2,15 @@
 import type {Node} from 'react';
 import React, {PureComponent} from 'react';
 import * as PropTypes from 'prop-types';
-import scrollIntoView from 'dom-scroll-into-view';
 import memoize from 'memoize-one';
+import List from 'react-virtualized/dist/commonjs/List';
+import AutoSizer from 'react-virtualized/dist/commonjs/AutoSizer';
 
+const DEFAULT_OPTION_HEIGHT = 28;
+const DEFAULT_GROUP_PADDING = 31;
+const DEFAULT_NO_OPTIONS_HEIGHT = DEFAULT_OPTION_HEIGHT;
+const DEFAULT_LIST_HEIGHT = 300;
+const DEFAULT_GERMAN_NOT_FOUND_LABEL = 'nicht gefunden';
 const DEFAULT_VALUE = undefined;
 const DEFAULT_LABEL = '';
 const KEY_TAB = 9;
@@ -34,9 +40,20 @@ type WrappedOption = {
     index: number
 };
 
+type Row = {|
+    option: Option,
+    index: number
+|} | {|
+    group: Group,
+    index: number
+|};
+
 type Props = {
     allowUnknownValue: boolean,
     autoSelectSingleOption: boolean,
+    calculateGroupHeight: (group: Group, index: number) => number,
+    calculateListHeight: (rows: Row[], totalRowsHeight: number) => number,
+    calculateOptionHeight: (option: Option, index: number) => number,
     className: string,
     fieldName: string,
     groups: Optional<Group[]>,
@@ -44,13 +61,14 @@ type Props = {
     isClearable: boolean,
     isDisabled: boolean,
     minTypedCharacters?: number,
+    notFoundLabel: string,
     onBlur: Function,
     onChange: Function,
     options: Option[],
     placeholder: string,
     renderEmptyGroups: boolean,
     tabIndex?: number,
-    value?: any
+    value?: any,
 };
 
 type State = {
@@ -73,6 +91,9 @@ export default class Typeahead extends PureComponent<Props, State> {
     static propTypes = {
         allowUnknownValue: PropTypes.bool,
         autoSelectSingleOption: PropTypes.bool,
+        calculateGroupHeight: PropTypes.func,
+        calculateListHeight: PropTypes.func,
+        calculateOptionHeight: PropTypes.func,
         className: PropTypes.string,
         fieldName: PropTypes.string.isRequired,
         groups: PropTypes.arrayOf(PropTypes.shape({
@@ -83,6 +104,7 @@ export default class Typeahead extends PureComponent<Props, State> {
         isClearable: PropTypes.bool,
         isDisabled: PropTypes.bool,
         minTypedCharacters: PropTypes.number,
+        notFoundLabel: PropTypes.string,
         onBlur: PropTypes.func,
         onChange: PropTypes.func,
         options: PropTypes.arrayOf(PropTypes.shape({
@@ -99,11 +121,15 @@ export default class Typeahead extends PureComponent<Props, State> {
     static defaultProps = {
         allowUnknownValue: false,
         autoSelectSingleOption: false,
+        calculateGroupHeight: _calculateGroupHeight,
+        calculateListHeight: _calculateListHeight,
+        calculateOptionHeight: _calculateOptionHeight,
         className: 'typeahead',
         groups: undefined,
         id: undefined,
         isClearable: false,
         isDisabled: false,
+        notFoundLabel: DEFAULT_GERMAN_NOT_FOUND_LABEL,
         onBlur: () => {},
         onChange: () => {},
         options: [],
@@ -122,25 +148,29 @@ export default class Typeahead extends PureComponent<Props, State> {
         [string]: any
     } = {};
 
-    _handleFocus = (): void => {
+    isMouseDown: boolean = false;
+
+    _handleInputFocus = (): void => {
         this._openIfPossible();
     };
 
-    _handleMouseDown = (): void => {
+    _handleInputMouseDown = (): void => {
         this._openIfPossible();
     };
 
-    _handleBlur = (): void => {
-        this._clearIfNecessary(() => {
-            const previousValue = this.state.value;
-            this._updateValue(() => {
-                this._afterValueChanged(previousValue)();
-                this._fireOnBlur();
+    _handleInputBlur = (): void => {
+        if (!this.isMouseDown) {
+            this._clearIfNecessary(() => {
+                const previousValue = this.state.value;
+                this._updateValue(() => {
+                    this._afterValueChanged(previousValue)();
+                    this._fireOnBlur();
+                });
             });
-        });
+        }
     };
 
-    _handleChange = (e: KeyboardEvent): void => {
+    _handleInputChange = (e: KeyboardEvent): void => {
         const label = ((e.target: any): HTMLInputElement).value || DEFAULT_LABEL;
         this.setState({
             typedLabel: label
@@ -156,6 +186,54 @@ export default class Typeahead extends PureComponent<Props, State> {
             this._openIfPossible();
             this._closeIfNecessary();
         });
+    };
+
+    _handleInputKeyDown = (e: KeyboardEvent): void => {
+        if (e.keyCode === KEY_UP) {
+            this.setState({
+                highlightedIndex: this._getPreviousIndex()
+            });
+        } else if (e.keyCode === KEY_DOWN) {
+            if (this.state.isOpen) {
+                this.setState({
+                    highlightedIndex: this._getNextIndex()
+                });
+            } else {
+                this._openIfPossible();
+            }
+        } else if (e.keyCode === KEY_ENTER || e.keyCode === KEY_NUMPAD_ENTER) {
+            if (this.state.isOpen) {
+                const previousValue = this.state.value;
+                this._updateValue(this._afterValueChanged(previousValue));
+            }
+        } else if (e.keyCode !== KEY_TAB) {
+            this._openIfPossible();
+        }
+    };
+
+    _handleClearClick = (e: MouseEvent): void => {
+        e.preventDefault();
+        this._clearValue();
+    };
+
+    _createHandleOptionMouseDown = (value: any, highlightedIndex: number): Function => (e: MouseEvent): void => {
+        e.stopPropagation();
+        e.preventDefault();
+        const previousValue = this.state.value;
+        this.setState({
+            highlightedIndex,
+            isOpen: false,
+            typedLabel: Typeahead._getLabelByValue(value, this.props.options, this.props.allowUnknownValue),
+            value
+        }, this._afterValueChanged(previousValue));
+    };
+
+    _handleListMouseDown = () => {
+        this.isMouseDown = true;
+    };
+
+    _handleListMouseUp = () => {
+        this.isMouseDown = false;
     };
 
     _openIfPossible = (): void => {
@@ -193,33 +271,6 @@ export default class Typeahead extends PureComponent<Props, State> {
         return typedLabelFoundInOptions ? optionIndex : NOTHING_HIGHLIGHTED;
     };
 
-    _handleKeyDown = (e: KeyboardEvent): void => {
-        if (e.keyCode === KEY_UP) {
-            this.setState({
-                highlightedIndex: this._getPreviousIndex()
-            }, () => {
-                this._scrollHighlightedOptionIntoView();
-            });
-        } else if (e.keyCode === KEY_DOWN) {
-            if (this.state.isOpen) {
-                this.setState({
-                    highlightedIndex: this._getNextIndex()
-                }, () => {
-                    this._scrollHighlightedOptionIntoView();
-                });
-            } else {
-                this._openIfPossible();
-            }
-        } else if (e.keyCode === KEY_ENTER || e.keyCode === KEY_NUMPAD_ENTER) {
-            if (this.state.isOpen) {
-                const previousValue = this.state.value;
-                this._updateValue(this._afterValueChanged(previousValue));
-            }
-        } else if (e.keyCode !== KEY_TAB) {
-            this._openIfPossible();
-        }
-    };
-
     _updateValue = (afterValueUpdated: Function): void => {
         const shouldUpdateValue = this.state.isOpen || this.props.minTypedCharacters;
         if (shouldUpdateValue) {
@@ -238,23 +289,6 @@ export default class Typeahead extends PureComponent<Props, State> {
         } else {
             afterValueUpdated();
         }
-    };
-
-    _createHandleMouseDown = (value: any, highlightedIndex: number): Function => (e: MouseEvent): void => {
-        e.stopPropagation();
-        e.preventDefault();
-        const previousValue = this.state.value;
-        this.setState({
-            highlightedIndex,
-            isOpen: false,
-            typedLabel: Typeahead._getLabelByValue(value, this.props.options, this.props.allowUnknownValue),
-            value
-        }, this._afterValueChanged(previousValue));
-    };
-
-    _handleClearClick = (e: MouseEvent): void => {
-        e.preventDefault();
-        this._clearValue();
     };
 
     _afterValueChanged = (previousValue: any): Function => (): void => {
@@ -402,15 +436,6 @@ export default class Typeahead extends PureComponent<Props, State> {
         return this._getSortedOptions().indexOf(highlightedOption);
     };
 
-    _scrollHighlightedOptionIntoView = () => {
-        if (this.state.isOpen && typeof this.state.highlightedIndex !== 'undefined' &&
-            this.state.highlightedIndex !== UNKNOWN_VALUE_HIGHLIGHTED) {
-            const optionNode = this.elementRefs[`option_${this._relativeToAbsoluteIndex(this.state.highlightedIndex)}`];
-            const menuNode = this.elementRefs['menu'];
-            scrollIntoView(optionNode, menuNode, {onlyScrollIfNeeded: true});
-        }
-    };
-
     _fireOnChangeIfSingleOptionWasUpdated = (prevProps: Props) => {
         const {autoSelectSingleOption, options} = this.props;
         const haveOptionsChanged = prevProps.options !== options;
@@ -439,20 +464,10 @@ export default class Typeahead extends PureComponent<Props, State> {
             this.state.typedLabel.length !== 0) {
             return (
                 <div className="typeahead__no_options">
-                    <p><span className="typeahead__no_options__keyword">{this.state.typedLabel}</span> nicht
-                        gefunden</p>
+                    <span className="typeahead__no_options__keyword">{this.state.typedLabel}</span>
+                    &nbsp;{this.props.notFoundLabel}
                 </div>
             );
-        }
-    }
-
-    renderUnknownValueOption(): Node {
-        if (this.props.allowUnknownValue && this._isUnknownValue()) {
-            const option = {
-                label: this.state.typedLabel,
-                value: this.state.typedLabel
-            };
-            return this.renderOption(option, UNKNOWN_VALUE_HIGHLIGHTED);
         }
     }
 
@@ -461,7 +476,7 @@ export default class Typeahead extends PureComponent<Props, State> {
         return (<span className="typeahead__option__new_option"> (+) </span>);
     }
 
-    renderOption = (option: Option, absoluteIndex: number): Node => {
+    renderOption = (option: Option, absoluteIndex: number, style: any): Node => {
         const isHighlighted = typeof this.state.highlightedIndex !== 'undefined'
             && absoluteIndex === this._relativeToAbsoluteIndex(this.state.highlightedIndex);
         return (
@@ -472,44 +487,119 @@ export default class Typeahead extends PureComponent<Props, State> {
                 data-value={option.value}
                 data-highlighted={isHighlighted}
                 data-group={option.group}
-                onMouseDown={this._createHandleMouseDown(option.value, absoluteIndex)}>
+                style={style}
+                onMouseDown={this._createHandleOptionMouseDown(option.value, absoluteIndex)}>
                 {option.label}
                 {absoluteIndex === UNKNOWN_VALUE_HIGHLIGHTED ? this.renderNewOptionMarker() : null}
             </div>
         );
     };
 
-    renderGroup = (group: Group): Node => {
-        const filteredOptions = this._getFilteredOptions();
-        const groupOptions = filteredOptions.filter(option => option.group === group.value);
-
-        if (!this.props.renderEmptyGroups && groupOptions.length === 0) {
-            return null;
-        }
-
+    renderGroup = (group: Group, style: any): Node => {
         return (
-            <div key={`typeahead__group__${group.value}`} className="typeahead__group" data-value={group.value}>
+            <div key={`typeahead__group__${group.value}`} className="typeahead__group" data-value={group.value}
+                style={style}>
                 <div className="typeahead__group__label">{group.label}</div>
-                {groupOptions.map(option => this.renderOption(option, this._getAbsoluteIndex(option)))}
             </div>
         );
     };
 
-    renderGroups(groups: Group[]): ?Node[] {
-        return groups.map(this.renderGroup);
-    }
+    _generateRows = memoize(
+        (options: Option[], groups: Optional<Group[]>, props: Props, isUnknownValue: boolean): Row[] => {
+            const rows = [];
+            if (props.allowUnknownValue && isUnknownValue) {
+                rows.push({
+                    option: {
+                        label: this.state.typedLabel,
+                        value: this.state.typedLabel
+                    },
+                    index: UNKNOWN_VALUE_HIGHLIGHTED
+                });
+            }
+            if (groups) {
+                groups.forEach((group, index) => {
+                    const groupOptions = options.filter(option => option.group === group.value);
+                    if (groupOptions.length > 0 || props.renderEmptyGroups) {
+                        rows.push({group, index});
+                    }
+                    groupOptions.forEach(option => rows.push({
+                        option,
+                        index: this._getAbsoluteIndex(option)
+                    }));
+                });
+            } else {
+                options.forEach((option, index) => rows.push({
+                    option,
+                    index
+                }));
+            }
+            return rows;
+        }
+    );
+
+    _calculateTotalRowHeights = memoize(
+        (rows: Row[], props: Props) => {
+            return rows.reduce((totalRowsHeight, row) => totalRowsHeight + (row.group
+                ? props.calculateGroupHeight(row.group, row.index)
+                : props.calculateOptionHeight(row.option, row.index)), 0);
+        });
+
+    _createRenderRow = (rows: Row[]) => ({index, style}: {index: number, style: any}) => {
+        const row = rows[index];
+        if (row.option) {
+            return this.renderOption(row.option, row.index, style);
+        }
+        return this.renderGroup(row.group, style);
+    };
+
+    _createCalculateRowHeight = (rows: Row[]) => ({index}: {index: number}) => {
+        if (rows[index].group) {
+            return this.props.calculateGroupHeight(rows[index].group, index);
+        }
+        return this.props.calculateOptionHeight(rows[index].option, index);
+    };
+
+    _createScrollToIndexProp = () => typeof this.state.highlightedIndex === 'undefined'
+        ? {}
+        : {scrollToIndex: this._relativeToAbsoluteIndex(this.state.highlightedIndex)};
+
+    _noRowsRenderer = () => this.renderNoOptionsMessage();
 
     renderMenu(): Node {
         if (this.state.isOpen) {
+            const rows = this._generateRows(
+                this._getFilteredOptions(),
+                this.props.groups,
+                this.props,
+                this._isUnknownValue()
+            );
+
+            const renderRow = this._createRenderRow(rows);
+            const calculateRowHeight = this._createCalculateRowHeight(rows);
+            const scrollToIndexProp = this._createScrollToIndexProp();
+            const totalRowsHeight = this._calculateTotalRowHeights(rows, this.props);
+            const listHeight = this.props.calculateListHeight(rows, totalRowsHeight);
+
             return (
-                <div ref={element => this.elementRefs['menu'] = element} className="typeahead__options">
-                    {this.renderNoOptionsMessage()}
-                    {this.renderUnknownValueOption()}
-                    {typeof this.props.groups === 'undefined'
-                        ? this._getFilteredOptions()
-                            .map(option => this.renderOption(option, this._getAbsoluteIndex(option)))
-                        : this.renderGroups(this.props.groups)
-                    }
+                <div
+                    ref={element => this.elementRefs['menu'] = element}
+                    className="typeahead__options"
+                    onMouseDown={this._handleListMouseDown}
+                    onMouseUp={this._handleListMouseUp}>
+                    <AutoSizer disableHeight>
+                        {({width}) => (
+                            <List
+                                height={listHeight}
+                                width={width}
+                                rowCount={rows.length}
+                                noRowsRenderer={this._noRowsRenderer}
+                                rowHeight={calculateRowHeight}
+                                rowRenderer={renderRow}
+                                scrollToAlignment="start"
+                                {...scrollToIndexProp}
+                            />
+                        )}
+                    </AutoSizer>
                 </div>
             );
         }
@@ -534,11 +624,11 @@ export default class Typeahead extends PureComponent<Props, State> {
                     {...tabIndexProp}
                     disabled={this.props.isDisabled}
                     name={this.props.fieldName}
-                    onFocus={this._handleFocus}
-                    onBlur={this._handleBlur}
-                    onChange={this._handleChange}
-                    onKeyDown={this._handleKeyDown}
-                    onMouseDown={this._handleMouseDown}
+                    onFocus={this._handleInputFocus}
+                    onBlur={this._handleInputBlur}
+                    onChange={this._handleInputChange}
+                    onKeyDown={this._handleInputKeyDown}
+                    onMouseDown={this._handleInputMouseDown}
                     placeholder={this.props.placeholder}
                     value={this.state.typedLabel}
                 />
@@ -578,4 +668,20 @@ function _compareOptions(groups: Group[]): (WrappedOption, WrappedOption) => num
             _indexOfGroup(groups, wrappedOptionB.option.group);
         return groupComparison === 0 ? wrappedOptionA.index - wrappedOptionB.index : groupComparison;
     };
+}
+
+function _calculateGroupHeight(group: Group, index: number) {
+    return index > 0
+        ? DEFAULT_OPTION_HEIGHT + DEFAULT_GROUP_PADDING
+        : DEFAULT_OPTION_HEIGHT;
+}
+
+function _calculateListHeight(rows: Row[], totalRowsHeight: number) {
+    return rows.length === 0
+        ? DEFAULT_NO_OPTIONS_HEIGHT
+        : Math.min(totalRowsHeight, DEFAULT_LIST_HEIGHT);
+}
+
+function _calculateOptionHeight() {
+    return DEFAULT_OPTION_HEIGHT;
 }
