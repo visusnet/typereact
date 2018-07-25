@@ -76,15 +76,20 @@ type State = {
     isOpen: boolean,
     typedLabel: string,
     value: ?any,
-    props: ?Props
+    props: ?Props,
+    menuOpenDirection: 'down' | 'up'
 };
+
+const MENU_OPEN_DIRECTION_DOWN = 'down';
+const MENU_OPEN_DIRECTION_UP = 'up';
 
 const INITIAL_STATE: State = {
     highlightedIndex: NOTHING_HIGHLIGHTED,
     isOpen: false,
     typedLabel: '',
     value: undefined,
-    props: undefined
+    props: undefined,
+    menuOpenDirection: MENU_OPEN_DIRECTION_DOWN
 };
 
 export default class Typeahead extends PureComponent<Props, State> {
@@ -447,12 +452,53 @@ export default class Typeahead extends PureComponent<Props, State> {
         }
     };
 
+    _handleScroll = () => {
+        this._updateMenuOpenDirection();
+    };
+
+    _handleResize = () => {
+        this._updateMenuOpenDirection();
+    };
+
+    _updateMenuOpenDirection = () => {
+        const container = this.elementRefs['container'];
+        const rows = this._generateRows(
+            this._getFilteredOptions(),
+            this.props.groups,
+            this.props,
+            this._isUnknownValue()
+        );
+
+        const totalRowsHeight = this._calculateTotalRowHeights(rows, this.props);
+        const spacingThreshold = DEFAULT_GROUP_PADDING + DEFAULT_OPTION_HEIGHT;
+        const listHeight = this.props.calculateListHeight(rows, totalRowsHeight) + spacingThreshold;
+
+        const menuTop = container.getBoundingClientRect().top;
+        const menuOpenDirection = window.innerHeight < menuTop + listHeight
+            ? MENU_OPEN_DIRECTION_UP
+            : MENU_OPEN_DIRECTION_DOWN;
+
+        if (this.state.menuOpenDirection !== menuOpenDirection) {
+            this.setState({
+                menuOpenDirection
+            });
+        }
+    };
+
     componentDidMount(): void {
         const {autoSelectSingleOption, options} = this.props;
         if (autoSelectSingleOption && options.length === 1) {
             const valueOfSingleOption = options[0].value;
             this._fireOnChange(valueOfSingleOption);
         }
+
+        window.addEventListener('scroll', this._handleScroll);
+        window.addEventListener('resize', this._handleResize);
+    }
+
+    componentWillUnmount() {
+        window.removeEventListener('scroll', this._handleScroll);
+        window.removeEventListener('resize', this._handleResize);
     }
 
     componentDidUpdate(prevProps: Props): void {
@@ -616,9 +662,9 @@ export default class Typeahead extends PureComponent<Props, State> {
     render(): Node {
         const idProp = this.props.id ? {id: this.props.id} : {};
         const tabIndexProp = this.props.tabIndex ? {tabIndex: this.props.tabIndex} : {};
-        const className = this.props.className;
+        const className = `${this.props.className} ${this.props.className}--${this.state.menuOpenDirection}`;
         return (
-            <div className={className}>
+            <div className={className} ref={element => this.elementRefs['container'] = element}>
                 <input
                     {...idProp}
                     {...tabIndexProp}
