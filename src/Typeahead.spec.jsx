@@ -1011,6 +1011,38 @@ describe('Typeahead should', () => {
         }
     });
 
+    it('change menu open direction on resize events', () => {
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={options}/>);
+        expect(wrapper.state('menuOpenDirection')).toEqual('down');
+        resizeTo(1024, 1);
+        expect(wrapper.state('menuOpenDirection')).toEqual('up');
+        resizeTo(1024, 768);
+        expect(wrapper.state('menuOpenDirection')).toEqual('down');
+    });
+
+    it('change menu open direction on scroll events', () => {
+        mount(<Typeahead fieldName="fieldName" options={options}/>);
+        scrollTo(768);
+        // Unfortunately, there is no way in JSDOM to update the calculated values of getBoundingClientRect().
+        // Therefore, there is no assertion that would work here.
+    });
+
+    it('not react to resize events after unmount', () => {
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={options}/>);
+        wrapper.unmount();
+        resizeTo(1024, 1);
+        wrapper.mount();
+        expect(wrapper.state('menuOpenDirection')).toEqual('down');
+    });
+
+    it('not react to scroll events after unmount', () => {
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={options}/>);
+        wrapper.unmount();
+        scrollTo(768);
+        wrapper.mount();
+        expect(wrapper.state('menuOpenDirection')).toEqual('down');
+    });
+
     function simulateKeys(wrapper, text) {
         const input = wrapper.find('input');
         for (let i = 0; i < text.length; i++) {
@@ -1029,5 +1061,21 @@ describe('Typeahead should', () => {
                 }
             });
         }
+    }
+
+    function resizeTo(width, height) {
+        const resizeEvent = document.createEvent('Event');
+        resizeEvent.initEvent('resize', true, true);
+
+        window.innerWidth = width || window.innerWidth;
+        window.innerHeight = height || window.innerHeight;
+        window.dispatchEvent(resizeEvent);
+    }
+
+    function scrollTo(top) {
+        const resizeEvent = document.createEvent('Event');
+        resizeEvent.initEvent('scroll', true, true);
+        window.top = top;
+        window.dispatchEvent(resizeEvent);
     }
 });
