@@ -489,6 +489,12 @@ export default class Typeahead extends PureComponent<Props, State> {
         const {autoSelectSingleOption, options} = this.props;
         if (autoSelectSingleOption && options.length === 1) {
             const valueOfSingleOption = options[0].value;
+            this.setState({
+                highlightedIndex: 0,
+                value: valueOfSingleOption,
+                typedLabel: Typeahead._getLabelByValue(valueOfSingleOption, this.props.options,
+                    this.props.allowUnknownValue)
+            });
             this._fireOnChange(valueOfSingleOption);
         }
 
