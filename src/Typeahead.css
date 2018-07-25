@@ -40,6 +40,9 @@
     padding: 16px 0 24px; }
     .typeahead__options .ReactVirtualized__List:active, .typeahead__options .ReactVirtualized__List:focus {
       outline: 0; }
+  .typeahead--up .typeahead__options {
+    top: auto;
+    bottom: calc(-100% + 64px); }
   .typeahead__option {
     font-family: 'Open Sans', sans-serif;
     font-weight: 400;

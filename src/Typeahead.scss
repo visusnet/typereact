@@ -72,6 +72,11 @@ $separatorColor: $black20;
         }
     }
 
+    &--up &__options {
+        top: auto;
+        bottom: calc(-100% + 64px);
+    }
+
     &__option {
         @include regular-font(14px, 28px);
         color: $inputColor;
