@@ -18,6 +18,7 @@ const KEY_ENTER = 13;
 const KEY_NUMPAD_ENTER = 176;
 const KEY_UP = 38;
 const KEY_DOWN = 40;
+const AUTO_SIZER_PADDING = 4;
 
 const UNKNOWN_VALUE_HIGHLIGHTED = -1;
 const NOTHING_HIGHLIGHTED = undefined;
@@ -146,7 +147,7 @@ export default class Typeahead extends PureComponent<Props, State> {
     state = INITIAL_STATE;
 
     _getSortedOptions = memoize(
-        (props: Props = this.props) => _sortOptionsByGroup(props.options, props.groups)
+        (props: Props) => _sortOptionsByGroup(props.options, props.groups)
     );
 
     elementRefs: {
@@ -346,7 +347,7 @@ export default class Typeahead extends PureComponent<Props, State> {
     _getFirstGroupsFirstOptionIndex = (): number => {
         const groups = this.props.groups;
         return typeof groups !== 'undefined' && Array.isArray(groups) && groups.length > 0
-            ? this._getSortedOptions().findIndex(option => option.group === groups[0].value)
+            ? this._getSortedOptions(this.props).findIndex(option => option.group === groups[0].value)
             : 0;
     };
 
@@ -370,8 +371,8 @@ export default class Typeahead extends PureComponent<Props, State> {
         const currentOptionLabel = Typeahead._getLabelByValue(this.state.value, options, allowUnknownValue);
         const typedLabelMatchesCurrentOptionLabel = this.state.typedLabel === currentOptionLabel;
         return typedLabelMatchesCurrentOptionLabel
-            ? this._getSortedOptions()
-            : this._getSortedOptions().filter(this._byGroupAndTypedLabel);
+            ? this._getSortedOptions(this.props)
+            : this._getSortedOptions(this.props).filter(this._byGroupAndTypedLabel);
     };
 
     static _getLabelByValue = (value: any, options: Option[], allowUnknownValue: boolean): string => {
@@ -433,12 +434,12 @@ export default class Typeahead extends PureComponent<Props, State> {
     _isUnknownValue = (): boolean => this._typedLabelHasText() &&
         !this._getFilteredOptions().some(option => option.label === this.state.typedLabel);
 
-    _getAbsoluteIndex = (option: Option): number => this._getSortedOptions()
+    _getAbsoluteIndex = (option: Option): number => this._getSortedOptions(this.props)
         .findIndex(opt => opt.value === option.value);
 
     _relativeToAbsoluteIndex = (relativeIndex: number): number => {
         const highlightedOption = this._getFilteredOptions()[relativeIndex];
-        return this._getSortedOptions().indexOf(highlightedOption);
+        return this._getSortedOptions(this.props).indexOf(highlightedOption);
     };
 
     _fireOnChangeIfSingleOptionWasUpdated = (prevProps: Props) => {
@@ -462,8 +463,9 @@ export default class Typeahead extends PureComponent<Props, State> {
 
     _updateMenuOpenDirection = () => {
         const container = this.elementRefs['container'];
+        const options = this._getFilteredOptions();
         const rows = this._generateRows(
-            this._getFilteredOptions(),
+            options,
             this.props.groups,
             this.props,
             this._isUnknownValue()
@@ -498,6 +500,8 @@ export default class Typeahead extends PureComponent<Props, State> {
             this._fireOnChange(valueOfSingleOption);
         }
 
+        this._updateMenuOpenDirection();
+
         window.addEventListener('scroll', this._handleScroll);
         window.addEventListener('resize', this._handleResize);
     }
@@ -509,6 +513,7 @@ export default class Typeahead extends PureComponent<Props, State> {
 
     componentDidUpdate(prevProps: Props): void {
         this._fireOnChangeIfSingleOptionWasUpdated(prevProps);
+        this._updateMenuOpenDirection();
     }
 
     renderNoOptionsMessage(): Node {
@@ -642,7 +647,7 @@ export default class Typeahead extends PureComponent<Props, State> {
                         {({width}) => (
                             <List
                                 height={listHeight}
-                                width={width}
+                                width={width - AUTO_SIZER_PADDING}
                                 rowCount={rows.length}
                                 noRowsRenderer={this._noRowsRenderer}
                                 rowHeight={calculateRowHeight}

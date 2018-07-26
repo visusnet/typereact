@@ -30,6 +30,18 @@ const options = [
     {label: 'special2', value: 'value4'}
 ];
 
+const manyOptions = [
+    ...options,
+    {label: 'label3', value: 'value3'},
+    {label: 'label4', value: 'value4'},
+    {label: 'label5', value: 'value5'},
+    {label: 'label6', value: 'value6'},
+    {label: 'label7', value: 'value7'},
+    {label: 'label8', value: 'value8'},
+    {label: 'label9', value: 'value9'},
+    {label: 'label10', value: 'value10'},
+];
+
 const option = {
     label: 'label',
     value: 'value'
@@ -1027,10 +1039,25 @@ describe('Typeahead should', () => {
         // Therefore, there is no assertion that would work here.
     });
 
+    it('change menu open direction initially', () => {
+        resizeTo(1024, 1);
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={options}/>);
+        expect(wrapper.state('menuOpenDirection')).toEqual('up');
+    });
+
+    it('change menu open direction after props have changed', () => {
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={manyOptions}/>);
+        resizeTo(1024, 170);
+        expect(wrapper.state('menuOpenDirection')).toEqual('up');
+        wrapper.setProps({options: []});
+        expect(wrapper.state('menuOpenDirection')).toEqual('down');
+    });
+
     it('not react to resize events after unmount', () => {
         const wrapper = mount(<Typeahead fieldName="fieldName" options={options}/>);
         wrapper.unmount();
         resizeTo(1024, 1);
+        resizeTo(1024, 768);
         wrapper.mount();
         expect(wrapper.state('menuOpenDirection')).toEqual('down');
     });
@@ -1039,6 +1066,7 @@ describe('Typeahead should', () => {
         const wrapper = mount(<Typeahead fieldName="fieldName" options={options}/>);
         wrapper.unmount();
         scrollTo(768);
+        scrollTo(0);
         wrapper.mount();
         expect(wrapper.state('menuOpenDirection')).toEqual('down');
     });
