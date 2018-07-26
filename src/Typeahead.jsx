@@ -410,6 +410,11 @@ export default class Typeahead extends PureComponent<Props, State> {
         if (optionWithMissingGroupExists) {
             throw new Error('There is at least one option with an unknown group.');
         }
+
+        if (typeof props.minTypedCharacters !== 'undefined') {
+            console.warn('The prop minTypedCharacters is deprecated. It will be ignored in future versions.' +
+                'Fortunately, performance is guaranteed due to virtualized lists.');
+        }
     };
 
     static getDerivedStateFromProps(props: Props, prevState: State): ?$Shape<State> {
