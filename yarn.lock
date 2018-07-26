@@ -6488,9 +6488,9 @@ typedarray@^0.0.6:
   version "0.0.6"
   resolved "https://registry.yarnpkg.com/typedarray/-/typedarray-0.0.6.tgz#867ac74e3864187b1d3d47d996a78ec5c8830777"
 
-typereact@^1.0.8:
-  version "1.0.8"
-  resolved "https://registry.yarnpkg.com/typereact/-/typereact-1.0.8.tgz#b314b1666cd0355a9908d3181e8429ab1cb75801"
+typereact@^1.0.11:
+  version "1.0.12"
+  resolved "http://10.103.55.169/content/groups/npm-public/typereact/-/typereact-1.0.12.tgz#2fa9f4122771f2dbb8a86e214a4590c771447782"
   dependencies:
     dom-scroll-into-view "^1.2.1"
     prop-types "^15.6.0"

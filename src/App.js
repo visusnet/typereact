@@ -58,6 +58,10 @@ class App extends Component {
                     <Typeahead fieldName="fieldNameStandard5" options={[options[0]]} autoSelectSingleOption={true}/>
                     <h2>Many Options</h2>
                     <Typeahead fieldName="fieldNameStandard6" options={generateOptions()}/>
+                    <h2>Many Options, minTypedCharacters = 3</h2>
+                    <Typeahead fieldName="fieldNameStandard7" options={generateOptions()} minTypedCharacters={3}/>
+                    <h2>Many Options, minTypedCharacters = 3, isClearable = true</h2>
+                    <Typeahead fieldName="fieldNameStandard8" options={generateOptions()} minTypedCharacters={3} isClearable={true}/>
                 </div>
                 <div style={{display: 'block', margin: '30px', width: '300px'}}>
                     <h1>Grouped</h1>
@@ -77,6 +81,12 @@ class App extends Component {
                         autoSelectSingleOption={true}/>
                     <h2>Many Options</h2>
                     <Typeahead fieldName="fieldNameGroup7" options={generateOptions()} groups={generateGroups()}/>
+                    <h2>Many Options, minTypedCharacters = 3</h2>
+                    <Typeahead fieldName="fieldNameGroup8" options={generateOptions()} groups={generateGroups()}
+                        minTypedCharacters={3}/>
+                    <h2>Many Options, minTypedCharacters = 3, isClearable = true</h2>
+                    <Typeahead fieldName="fieldNameGroup9" options={generateOptions()} groups={generateGroups()}
+                        minTypedCharacters={3} isClearable={true}/>
                 </div>
             </div>
         );
