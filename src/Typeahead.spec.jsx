@@ -9,6 +9,14 @@ import Typeahead from './Typeahead';
 
 Enzyme.configure({adapter: new Adapter()});
 
+function MockAutoSizer({children}: any) {
+    return <div>{children({width: 1024, height: 768})}</div>;
+}
+
+jest.mock('react-virtualized/dist/commonjs/AutoSizer', () => {
+    return MockAutoSizer;
+});
+
 const KEY_TAB = 9;
 const KEY_ENTER = 13;
 const KEY_NUMPAD_ENTER = 176;
@@ -20,6 +28,18 @@ const options = [
     {label: 'label2', value: 'value2'},
     {label: 'special1', value: 'value3'},
     {label: 'special2', value: 'value4'}
+];
+
+const manyOptions = [
+    ...options,
+    {label: 'label3', value: 'value3'},
+    {label: 'label4', value: 'value4'},
+    {label: 'label5', value: 'value5'},
+    {label: 'label6', value: 'value6'},
+    {label: 'label7', value: 'value7'},
+    {label: 'label8', value: 'value8'},
+    {label: 'label9', value: 'value9'},
+    {label: 'label10', value: 'value10'},
 ];
 
 const option = {
@@ -59,8 +79,8 @@ describe('Typeahead should', () => {
     });
 
     it('render tabIndex prop if specified', () => {
-        const wrapper = mount(<Typeahead fieldName="fieldName" tabIndex="1"/>);
-        expect(wrapper.find('input').prop('tabIndex')).toBe('1');
+        const wrapper = mount(<Typeahead fieldName="fieldName" tabIndex={1}/>);
+        expect(wrapper.find('input').prop('tabIndex')).toBe(1);
     });
 
     it('not render tabIndex prop when omitted', () => {
@@ -212,6 +232,24 @@ describe('Typeahead should', () => {
         wrapper.find('input').simulate('focus');
         wrapper.find('input').simulate('blur');
 
+        expect(wrapper.state('isOpen')).toBe(false);
+    });
+
+    it('not close menu while scrolling even though focus is lost', () => {
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={options}/>);
+        wrapper.find('input').simulate('focus');
+        wrapper.find('.typeahead__options').simulate('mouseDown');
+        wrapper.find('input').simulate('blur');
+        expect(wrapper.state('isOpen')).toBe(true);
+    });
+
+    it('close menu after scrolling on focus lost', () => {
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={options}/>);
+        wrapper.find('input').simulate('focus');
+        wrapper.find('.typeahead__options').simulate('mouseDown');
+        wrapper.find('input').simulate('blur');
+        wrapper.find('.typeahead__options').simulate('mouseUp');
+        wrapper.find('input').simulate('blur');
         expect(wrapper.state('isOpen')).toBe(false);
     });
 
@@ -764,6 +802,14 @@ describe('Typeahead should', () => {
         expect(wrapper.find('.typeahead__clear').exists()).toBe(true);
     });
 
+    it('not render clear button when isDisabled prop is true', () => {
+        const wrapper = mount(
+            <Typeahead fieldName="fieldName" options={options} allowUnknownValue={true} isClearable={true}
+                isDisabled={true} value="value1"/>
+        );
+        expect(wrapper.find('.typeahead__clear').exists()).toBe(false);
+    });
+
     it('clear value when clear button is clicked', () => {
         const wrapper = mount(
             <Typeahead fieldName="fieldName" options={options} allowUnknownValue={true} isClearable={true}
@@ -808,6 +854,19 @@ describe('Typeahead should', () => {
         mount(
             <Typeahead fieldName="fieldName" options={[option]} autoSelectSingleOption={true} onChange={handleChange}/>
         );
+        expect(handleChange.mock.calls.length).toBe(1);
+        expect(handleChange.mock.calls[0][1]).toEqual('value');
+    });
+
+    it('call onChange with the first option when autoSelectSingleOption is true and props changed', () => {
+        const handleChange = jest.fn();
+        const wrapper = mount(
+            <Typeahead fieldName="fieldName" options={[option]} onChange={handleChange}/>
+        );
+        expect(handleChange.mock.calls.length).toBe(0);
+        wrapper.setProps({
+            autoSelectSingleOption: true
+        });
         expect(handleChange.mock.calls.length).toBe(1);
         expect(handleChange.mock.calls[0][1]).toEqual('value');
     });
@@ -964,6 +1023,54 @@ describe('Typeahead should', () => {
         }
     });
 
+    it('change menu open direction on resize events', () => {
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={options}/>);
+        expect(wrapper.state('menuOpenDirection')).toEqual('down');
+        resizeTo(1024, 1);
+        expect(wrapper.state('menuOpenDirection')).toEqual('up');
+        resizeTo(1024, 768);
+        expect(wrapper.state('menuOpenDirection')).toEqual('down');
+    });
+
+    it('change menu open direction on scroll events', () => {
+        mount(<Typeahead fieldName="fieldName" options={options}/>);
+        scrollTo(768);
+        // Unfortunately, there is no way in JSDOM to update the calculated values of getBoundingClientRect().
+        // Therefore, there is no assertion that would work here.
+    });
+
+    it('change menu open direction initially', () => {
+        resizeTo(1024, 1);
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={options}/>);
+        expect(wrapper.state('menuOpenDirection')).toEqual('up');
+    });
+
+    it('change menu open direction after props have changed', () => {
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={manyOptions}/>);
+        resizeTo(1024, 170);
+        expect(wrapper.state('menuOpenDirection')).toEqual('up');
+        wrapper.setProps({options: []});
+        expect(wrapper.state('menuOpenDirection')).toEqual('down');
+    });
+
+    it('not react to resize events after unmount', () => {
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={options}/>);
+        wrapper.unmount();
+        resizeTo(1024, 1);
+        resizeTo(1024, 768);
+        wrapper.mount();
+        expect(wrapper.state('menuOpenDirection')).toEqual('down');
+    });
+
+    it('not react to scroll events after unmount', () => {
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={options}/>);
+        wrapper.unmount();
+        scrollTo(768);
+        scrollTo(0);
+        wrapper.mount();
+        expect(wrapper.state('menuOpenDirection')).toEqual('down');
+    });
+
     function simulateKeys(wrapper, text) {
         const input = wrapper.find('input');
         for (let i = 0; i < text.length; i++) {
@@ -982,5 +1089,21 @@ describe('Typeahead should', () => {
                 }
             });
         }
+    }
+
+    function resizeTo(width, height) {
+        const resizeEvent = document.createEvent('Event');
+        resizeEvent.initEvent('resize', true, true);
+
+        window.innerWidth = width || window.innerWidth;
+        window.innerHeight = height || window.innerHeight;
+        window.dispatchEvent(resizeEvent);
+    }
+
+    function scrollTo(top) {
+        const resizeEvent = document.createEvent('Event');
+        resizeEvent.initEvent('scroll', true, true);
+        window.top = top;
+        window.dispatchEvent(resizeEvent);
     }
 });

@@ -1,6 +1,6 @@
 # Typereact
 
-[![CircleCI](https://circleci.com/gh/visusnet/typereact.svg?style=shield&circle-token=80ba425931ad61cde5a4ad991aea29aa65c51a30)](https://circleci.com/gh/visusnet/typereact) [![Travis](https://travis-ci.org/visusnet/typereact.svg?branch=master)](https://travis-ci.org/visusnet/typereact) [![npm version](https://badge.fury.io/js/typereact.svg)](https://badge.fury.io/js/typereact) [![Coverage Status](https://coveralls.io/repos/github/visusnet/typereact/badge.svg?branch=master)](https://coveralls.io/github/visusnet/typereact?branch=master)
+[![CircleCI](https://circleci.com/gh/visusnet/typereact.svg?style=shield&circle-token=80ba425931ad61cde5a4ad991aea29aa65c51a30)](https://circleci.com/gh/visusnet/typereact) [![Travis](https://travis-ci.org/visusnet/typereact.svg?branch=master)](https://travis-ci.org/visusnet/typereact) [![npm version](https://badge.fury.io/js/typereact.svg)](https://badge.fury.io/js/typereact) [![Coverage Status](https://coveralls.io/repos/github/visusnet/typereact/badge.svg?branch=master)](https://coveralls.io/github/visusnet/typereact?branch=master) [![Greenkeeper badge](https://badges.greenkeeper.io/visusnet/typereact.svg)](https://greenkeeper.io/)
 
 Typereact is a simple React typeahead component that supports grouped entries.
 
@@ -35,21 +35,26 @@ const handleBlur = (fieldName, value) => {
 
 ## Configuration
 
-| Prop                   | Required  | Default         | Description                                                                                                  |
-| ---------------------- | --------- | --------------- | ------------------------------------------------------------------------------------------------------------ |
-| allowUnknownValue      | ``false`` | ``false``       | If true, arbitrary values can be typed.                                                                      |
-| autoSelectSingleOption | ``false`` | ``false``       | If true, the component will automatically select an option if there are no other options available.          |
-| groups                 | ``false`` | ``undefined``   | If supplied, options will be grouped according to these groups.                                              |
-| id                     | ``false`` | ``undefined``   | Sets the HTML input ID.                                                                                      |
-| isClearable            | ``false`` | ``false``       | Renders a button that unsets the selected value if set to true.                                              |
-| isDisabled             | ``false`` | ``false``       | If true, the component is disabled.                                                                          |
-| minTypedCharacters     | ``false`` | ``undefined``   | If set, at least ``minTypedCharacters`` must be typed before the menu is rendered.                           |
-| onBlur                 | ``false`` | no op           | A callback that is called when focus is lost. Parameters: ``fieldName``, ``value``.                          |
-| onChange               | ``false`` | no op           | A callback that is called when the value has changed. Parameters: ``fieldName``, ``value``.                  |
-| options                | ``false`` | ``[]``          | An array of label-value-pairs.                                                                               |
-| placeholder            | ``false`` | ``''``          | Sets the HTML placeholder attribute.                                                                         |
-| renderEmptyGroups      | ``false`` | ``false``       | If true, groups will be rendered even if they don't have any options. Works only in conjunction with groups. |
-| value                  | ``false`` | ``undefined``   | If set, selects the option with the specified value.                                                         |
+| Prop                   | Required  | Default                                        | Description                                                                                                  |
+| ---------------------- | --------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| allowUnknownValue      | ``false`` | ``false``                                      | If true, arbitrary values can be typed.                                                                      |
+| autoSelectSingleOption | ``false`` | ``false``                                      | If true, the component will automatically select an option if there are no other options available.          |
+| calculateGroupHeight   | ``false`` | ``59`` or ``28``                               | A callback that returns the height of group entries in pixels. Parameters: ``group``, ``index``.             |
+| calculateListHeight    | ``false`` | ``28`` or ``min(300, number of options * 28)`` | A callback that returns the height of the menu in pixels. Parameters: ``rows``, ``totalRowsHeight``.         |
+| calculateOptionHeight  | ``false`` | ``28``                                         | A callback that returns the height of option entries in pixels. Parameters: ``option``, ``index``.           |
+| groups                 | ``false`` | ``undefined``                                  | If supplied, options will be grouped according to these groups.                                              |
+| id                     | ``false`` | ``undefined``                                  | Sets the HTML input ID.                                                                                      |
+| isClearable            | ``false`` | ``false``                                      | Renders a button that unsets the selected value if set to true.                                              |
+| isDisabled             | ``false`` | ``false``                                      | If true, the component is disabled.                                                                          |
+| minTypedCharacters     | ``false`` | ``undefined``                                  | DEPRECATED. If set, at least ``minTypedCharacters`` must be typed before the menu is rendered.               |
+| notFoundLabel          | ``false`` | ``nicht gefunden`` (German)                    | A string that is displayed after the typed label for which no options could be found.                        |
+| onBlur                 | ``false`` | no op                                          | A callback that is called when focus is lost. Parameters: ``fieldName``, ``value``.                          |
+| onChange               | ``false`` | no op                                          | A callback that is called when the value has changed. Parameters: ``fieldName``, ``value``.                  |
+| options                | ``false`` | ``[]``                                         | An array of label-value-pairs.                                                                               |
+| placeholder            | ``false`` | ``''``                                         | Sets the HTML placeholder attribute.                                                                         |
+| renderEmptyGroups      | ``false`` | ``false``                                      | If true, groups will be rendered even if they don't have any options. Works only in conjunction with groups. |
+| tabIndex               | ``false`` | ``undefined``                                  | If set, this prop is passed down to the input field.                                                         |
+| value                  | ``false`` | ``undefined``                                  | If set, selects the option with the specified value.                                                         |
 
 ### Options
 
