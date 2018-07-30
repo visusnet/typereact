@@ -678,7 +678,7 @@ export default class Typeahead extends PureComponent<Props, State> {
     render(): Node {
         const idProp = this.props.id ? {id: this.props.id} : {};
         const tabIndexProp = this.props.tabIndex ? {tabIndex: this.props.tabIndex} : {};
-        const className = `${this.props.className} ${this.props.className}--${this.state.menuOpenDirection}`;
+        const className = `${this.props.className} typeahead--${this.state.menuOpenDirection}`;
         return (
             <div className={className} ref={element => this.elementRefs['container'] = element}>
                 <input
