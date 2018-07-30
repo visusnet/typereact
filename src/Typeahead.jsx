@@ -68,7 +68,6 @@ type Props = {
     isClearable: boolean,
     isDisabled: boolean,
     menuWidth: Optional<number>,
-    minTypedCharacters?: number,
     notFoundLabel: string,
     onBlur: Function,
     onChange: Function,
@@ -118,7 +117,6 @@ export default class Typeahead extends PureComponent<Props, State> {
         isClearable: PropTypes.bool,
         isDisabled: PropTypes.bool,
         menuWidth: PropTypes.number,
-        minTypedCharacters: PropTypes.number,
         notFoundLabel: PropTypes.string,
         onBlur: PropTypes.func,
         onChange: PropTypes.func,
@@ -175,12 +173,10 @@ export default class Typeahead extends PureComponent<Props, State> {
 
     _handleInputBlur = (): void => {
         if (!this.isMouseDown) {
-            this._clearIfNecessary(() => {
-                const previousValue = this.state.value;
-                this._updateValue(() => {
-                    this._afterValueChanged(previousValue)();
-                    this._fireOnBlur();
-                });
+            const previousValue = this.state.value;
+            this._updateValue(() => {
+                this._afterValueChanged(previousValue)();
+                this._fireOnBlur();
             });
         }
     };
@@ -199,7 +195,6 @@ export default class Typeahead extends PureComponent<Props, State> {
             }
 
             this._openIfPossible();
-            this._closeIfNecessary();
         });
     };
 
@@ -253,41 +248,21 @@ export default class Typeahead extends PureComponent<Props, State> {
 
     _openIfPossible = (): void => {
         if (!this.state.isOpen) {
-            this.setState((state, props) => ({
-                isOpen: props.minTypedCharacters ? props.minTypedCharacters <= state.typedLabel.length : true,
+            this.setState({
+                isOpen: true,
                 highlightedIndex: this._getHighlightedIndexByTypedLabel()
-            }));
-        }
-    };
-
-    _closeIfNecessary = (): void => {
-        const minTypedCharacters = this.props.minTypedCharacters;
-        if (minTypedCharacters) {
-            this.setState(state => ({
-                isOpen: minTypedCharacters <= state.typedLabel.length
-            }));
-        }
-    };
-
-    _clearIfNecessary = (afterClear: Function): void => {
-        if (this.props.minTypedCharacters && this.props.minTypedCharacters > this.state.typedLabel.length) {
-            this._updateValue(afterClear);
-        } else {
-            afterClear();
+            });
         }
     };
 
     _getHighlightedIndexByTypedLabel = (): number | typeof undefined => {
-        if (this.props.minTypedCharacters && this.props.minTypedCharacters > this.state.typedLabel.length) {
-            return NOTHING_HIGHLIGHTED;
-        }
         const optionIndex = this._getFilteredOptions().findIndex(this._byTypedLabel);
         const typedLabelFoundInOptions = optionIndex !== -1;
         return typedLabelFoundInOptions ? optionIndex : NOTHING_HIGHLIGHTED;
     };
 
     _updateValue = (afterValueUpdated: Function): void => {
-        const shouldUpdateValue = this.state.isOpen || this.props.minTypedCharacters;
+        const shouldUpdateValue = this.state.isOpen;
         if (shouldUpdateValue) {
             const previousValue = this.state.value;
             const valueOfHighlightedOption = this._getValueOfHighlightedOption();
@@ -418,11 +393,6 @@ export default class Typeahead extends PureComponent<Props, State> {
 
         if (optionWithMissingGroupExists) {
             throw new Error('There is at least one option with an unknown group.');
-        }
-
-        if (typeof props.minTypedCharacters !== 'undefined') {
-            console.warn('The prop minTypedCharacters is deprecated. It will be ignored in future versions.' +
-                'Fortunately, performance is guaranteed due to virtualized lists.');
         }
     };
 
@@ -680,7 +650,8 @@ export default class Typeahead extends PureComponent<Props, State> {
                         {({width}) => (
                             <List
                                 height={listHeight}
-                                width={typeof menuWidth === 'number' && menuWidth > width ? menuWidth : width - AUTO_SIZER_PADDING}
+                                width={typeof menuWidth === 'number' && menuWidth > width ? menuWidth : width -
+                                    AUTO_SIZER_PADDING}
                                 rowCount={rows.length}
                                 noRowsRenderer={this._noRowsRenderer}
                                 rowHeight={calculateRowHeight}
