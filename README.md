@@ -42,10 +42,12 @@ const handleBlur = (fieldName, value) => {
 | calculateGroupHeight   | ``false`` | ``59`` or ``28``                               | A callback that returns the height of group entries in pixels. Parameters: ``group``, ``index``.             |
 | calculateListHeight    | ``false`` | ``28`` or ``min(300, number of options * 28)`` | A callback that returns the height of the menu in pixels. Parameters: ``rows``, ``totalRowsHeight``.         |
 | calculateOptionHeight  | ``false`` | ``28``                                         | A callback that returns the height of option entries in pixels. Parameters: ``option``, ``index``.           |
+| estimateMenuWidth      | ``false`` | ``undefined``                                  | A callback that returns the width the menu in pixels. Parameters: ``rows``.                                  |
 | groups                 | ``false`` | ``undefined``                                  | If supplied, options will be grouped according to these groups.                                              |
 | id                     | ``false`` | ``undefined``                                  | Sets the HTML input ID.                                                                                      |
 | isClearable            | ``false`` | ``false``                                      | Renders a button that unsets the selected value if set to true.                                              |
 | isDisabled             | ``false`` | ``false``                                      | If true, the component is disabled.                                                                          |
+| menuWidth              | ``false`` | ``undefined``                                  | A number that manually sets the width of the menu.                                                           |
 | minTypedCharacters     | ``false`` | ``undefined``                                  | DEPRECATED. If set, at least ``minTypedCharacters`` must be typed before the menu is rendered.               |
 | notFoundLabel          | ``false`` | ``nicht gefunden`` (German)                    | A string that is displayed after the typed label for which no options could be found.                        |
 | onBlur                 | ``false`` | no op                                          | A callback that is called when focus is lost. Parameters: ``fieldName``, ``value``.                          |
