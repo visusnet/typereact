@@ -10,7 +10,7 @@ import Typeahead from './Typeahead';
 Enzyme.configure({adapter: new Adapter()});
 
 function MockAutoSizer({children}: any) {
-    return <div>{children({width: 1024, height: 768})}</div>;
+    return <div>{children({width: 300, height: 768})}</div>;
 }
 
 jest.mock('react-virtualized/dist/commonjs/AutoSizer', () => {
@@ -39,7 +39,7 @@ const manyOptions = [
     {label: 'label7', value: 'value7'},
     {label: 'label8', value: 'value8'},
     {label: 'label9', value: 'value9'},
-    {label: 'label10', value: 'value10'},
+    {label: 'label10', value: 'value10'}
 ];
 
 const option = {
@@ -1071,17 +1071,54 @@ describe('Typeahead should', () => {
         expect(wrapper.state('menuOpenDirection')).toEqual('down');
     });
 
-    it('use numeric menuWidth', () => {
+    it('use menuWidth', () => {
         const wrapper = mount(<Typeahead fieldName="fieldName" options={options} menuWidth={500}/>);
         wrapper.find('input').simulate('focus');
         expect(wrapper.find('.typeahead__options').prop('style').width).toEqual('500px');
     });
 
-    it('use functional menuWidth', () => {
-        const calculateMenuWidth = () => 500;
-        const wrapper = mount(<Typeahead fieldName="fieldName" options={options} menuWidth={calculateMenuWidth}/>);
+    it('use estimateMenuWidth = true', () => {
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={options} estimateMenuWidth/>);
         wrapper.find('input').simulate('focus');
-        expect(wrapper.find('.typeahead__options').prop('style').width).toEqual('500px');
+        expect(wrapper.find('.typeahead__options').prop('style').width).toEqual('54px');
+    });
+
+    it('use estimateMenuWidth callback', () => {
+        const calculateMenuWidth = () => 500;
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={options}
+            estimateMenuWidth={calculateMenuWidth}/>);
+        wrapper.find('input').simulate('focus');
+        expect(wrapper.find('[role="grid"]').at(1).prop('style').width).toEqual(500);
+    });
+
+    it('use estimateMenuWidth = true with groups', () => {
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={optionsWithGroups} groups={groups}
+            estimateMenuWidth/>);
+        wrapper.find('input').simulate('focus');
+        expect(wrapper.find('[role="grid"]').at(1).prop('style').width).toEqual(296);
+    });
+
+    it('use estimateMenuWidth = true with groups and no options', () => {
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={[]} groups={groups}
+            estimateMenuWidth/>);
+        wrapper.find('input').simulate('focus');
+        expect(wrapper.find('[role="grid"]').at(1).prop('style').width).toEqual(296);
+    });
+
+    it('use estimateMenuWidth callback without options', () => {
+        const calculateMenuWidth = () => 500;
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={[]}
+            estimateMenuWidth={calculateMenuWidth}/>);
+        wrapper.find('input').simulate('focus');
+        expect(wrapper.find('[role="grid"]').at(1).prop('style').width).toEqual(500);
+    });
+
+    it('use default menuWidth when estimateMenuWidth callback result is smaller', () => {
+        const calculateMenuWidth = () => 200;
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={options}
+            estimateMenuWidth={calculateMenuWidth}/>);
+        wrapper.find('input').simulate('focus');
+        expect(wrapper.find('[role="grid"]').at(1).prop('style').width).toEqual(296);
     });
 
     function simulateKeys(wrapper, text) {

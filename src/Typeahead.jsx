@@ -42,13 +42,17 @@ type WrappedOption = {
     index: number
 };
 
-type Row = {|
+type OptionRow = {|
     option: Option,
     index: number
-|} | {|
+|};
+
+type GroupRow = {|
     group: Group,
     index: number
 |};
+
+type Row = OptionRow | GroupRow;
 
 type Props = {
     allowUnknownValue: boolean,
@@ -57,12 +61,13 @@ type Props = {
     calculateListHeight: (rows: Row[], totalRowsHeight: number) => number,
     calculateOptionHeight: (option: Option, index: number) => number,
     className: string,
+    estimateMenuWidth: Optional<boolean | (rows: Row[]) => Optional<number>>,
     fieldName: string,
     groups: Optional<Group[]>,
     id?: string,
     isClearable: boolean,
     isDisabled: boolean,
-    menuWidth: Optional<number | (rows: Row[]) => Optional<number>>,
+    menuWidth: Optional<number>,
     minTypedCharacters?: number,
     notFoundLabel: string,
     onBlur: Function,
@@ -103,6 +108,7 @@ export default class Typeahead extends PureComponent<Props, State> {
         calculateListHeight: PropTypes.func,
         calculateOptionHeight: PropTypes.func,
         className: PropTypes.string,
+        estimateMenuWidth: PropTypes.oneOfType([PropTypes.bool, PropTypes.func]),
         fieldName: PropTypes.string.isRequired,
         groups: PropTypes.arrayOf(PropTypes.shape({
             label: PropTypes.string.isRequired,
@@ -111,7 +117,7 @@ export default class Typeahead extends PureComponent<Props, State> {
         id: PropTypes.string,
         isClearable: PropTypes.bool,
         isDisabled: PropTypes.bool,
-        menuWidth: PropTypes.oneOf([PropTypes.number, PropTypes.func]),
+        menuWidth: PropTypes.number,
         minTypedCharacters: PropTypes.number,
         notFoundLabel: PropTypes.string,
         onBlur: PropTypes.func,
@@ -138,7 +144,6 @@ export default class Typeahead extends PureComponent<Props, State> {
         id: undefined,
         isClearable: false,
         isDisabled: false,
-        menuWidth: _menuWidth,
         notFoundLabel: DEFAULT_GERMAN_NOT_FOUND_LABEL,
         onBlur: () => {},
         onChange: () => {},
@@ -631,12 +636,20 @@ export default class Typeahead extends PureComponent<Props, State> {
 
     _noRowsRenderer = () => this.renderNoOptionsMessage();
 
-    _menuWidth = memoize(
-        (menuWidth: Optional<number | (rows: Row[]) => Optional<number>>, rows: Row[]) =>
-            typeof menuWidth === 'function'
-                ? menuWidth(rows)
-                : menuWidth
+    _estimateMenuWidth = memoize(
+        (estimateMenuWidth: Optional<boolean | (rows: Row[]) => Optional<number>>, rows: Row[]): Optional<number> =>
+            typeof estimateMenuWidth === 'function'
+                ? estimateMenuWidth(rows)
+                : _estimateMenuWidth(rows)
     );
+
+    _calculateMenuWidth = (rows: Row[]) => {
+        return this.props.menuWidth
+            ? this.props.menuWidth
+            : this.props.estimateMenuWidth
+                ? this._estimateMenuWidth(this.props.estimateMenuWidth, rows)
+                : undefined;
+    };
 
     renderMenu(): Node {
         if (this.state.isOpen) {
@@ -652,7 +665,8 @@ export default class Typeahead extends PureComponent<Props, State> {
             const scrollToIndexProp = this._createScrollToIndexProp();
             const totalRowsHeight = this._calculateTotalRowHeights(rows, this.props);
             const listHeight = this.props.calculateListHeight(rows, totalRowsHeight);
-            const menuWidth = this._menuWidth(this.props.menuWidth, rows);
+            const menuWidth = this._calculateMenuWidth(rows);
+
             const styleProp = menuWidth ? {style: {width: `${menuWidth}px`}} : {};
 
             return (
@@ -666,7 +680,7 @@ export default class Typeahead extends PureComponent<Props, State> {
                         {({width}) => (
                             <List
                                 height={listHeight}
-                                width={menuWidth ? menuWidth : width - AUTO_SIZER_PADDING}
+                                width={typeof menuWidth === 'number' && menuWidth > width ? menuWidth : width - AUTO_SIZER_PADDING}
                                 rowCount={rows.length}
                                 noRowsRenderer={this._noRowsRenderer}
                                 rowHeight={calculateRowHeight}
@@ -762,16 +776,19 @@ function _calculateOptionHeight() {
     return DEFAULT_OPTION_HEIGHT;
 }
 
-function _rowWithLongestLabel(longestRow, row) {
-    if (!longestRow || !longestRow.option) {
+function _rowWithLongestLabel(longestRow: ?OptionRow, row: Row): ?OptionRow {
+    if (!row.option) {
+        return longestRow;
+    }
+    if (!longestRow) {
         return row;
     }
-    return row.option && row.option.label.length > longestRow.option.label.length ? row : longestRow;
+    return row.option.label.length > longestRow.option.label.length ? row : longestRow;
 }
 
-function _menuWidth(rows: Row[]): Optional<number> {
-    const row = rows.reduce(_rowWithLongestLabel, undefined);
-    return row && row.option
+function _estimateMenuWidth(rows: Row[]): Optional<number> {
+    const row: ?OptionRow = rows.reduce(_rowWithLongestLabel, undefined);
+    return row
         ? Math.ceil(row.option.label.length * DEFAULT_ESTIMATED_CHARACTER_WIDTH)
         : undefined;
 }
