@@ -13,6 +13,7 @@ const DEFAULT_LIST_HEIGHT = 300;
 const DEFAULT_GERMAN_NOT_FOUND_LABEL = 'nicht gefunden';
 const DEFAULT_VALUE = undefined;
 const DEFAULT_LABEL = '';
+const DEFAULT_ESTIMATED_CHARACTER_WIDTH = 6.75;
 const KEY_TAB = 9;
 const KEY_ENTER = 13;
 const KEY_NUMPAD_ENTER = 176;
@@ -61,6 +62,7 @@ type Props = {
     id?: string,
     isClearable: boolean,
     isDisabled: boolean,
+    menuWidth: Optional<number | (rows: Row[]) => Optional<number>>,
     minTypedCharacters?: number,
     notFoundLabel: string,
     onBlur: Function,
@@ -69,7 +71,7 @@ type Props = {
     placeholder: string,
     renderEmptyGroups: boolean,
     tabIndex?: number,
-    value?: any,
+    value?: any
 };
 
 type State = {
@@ -109,6 +111,7 @@ export default class Typeahead extends PureComponent<Props, State> {
         id: PropTypes.string,
         isClearable: PropTypes.bool,
         isDisabled: PropTypes.bool,
+        menuWidth: PropTypes.oneOf([PropTypes.number, PropTypes.func]),
         minTypedCharacters: PropTypes.number,
         notFoundLabel: PropTypes.string,
         onBlur: PropTypes.func,
@@ -135,6 +138,7 @@ export default class Typeahead extends PureComponent<Props, State> {
         id: undefined,
         isClearable: false,
         isDisabled: false,
+        menuWidth: _menuWidth,
         notFoundLabel: DEFAULT_GERMAN_NOT_FOUND_LABEL,
         onBlur: () => {},
         onChange: () => {},
@@ -627,6 +631,13 @@ export default class Typeahead extends PureComponent<Props, State> {
 
     _noRowsRenderer = () => this.renderNoOptionsMessage();
 
+    _menuWidth = memoize(
+        (menuWidth: Optional<number | (rows: Row[]) => Optional<number>>, rows: Row[]) =>
+            typeof menuWidth === 'function'
+                ? menuWidth(rows)
+                : menuWidth
+    );
+
     renderMenu(): Node {
         if (this.state.isOpen) {
             const rows = this._generateRows(
@@ -641,18 +652,21 @@ export default class Typeahead extends PureComponent<Props, State> {
             const scrollToIndexProp = this._createScrollToIndexProp();
             const totalRowsHeight = this._calculateTotalRowHeights(rows, this.props);
             const listHeight = this.props.calculateListHeight(rows, totalRowsHeight);
+            const menuWidth = this._menuWidth(this.props.menuWidth, rows);
+            const styleProp = menuWidth ? {style: {width: `${menuWidth}px`}} : {};
 
             return (
                 <div
                     ref={element => this.elementRefs['menu'] = element}
                     className="typeahead__options"
                     onMouseDown={this._handleListMouseDown}
-                    onMouseUp={this._handleListMouseUp}>
+                    onMouseUp={this._handleListMouseUp}
+                    {...styleProp}>
                     <AutoSizer disableHeight>
                         {({width}) => (
                             <List
                                 height={listHeight}
-                                width={width - AUTO_SIZER_PADDING}
+                                width={menuWidth ? menuWidth : width - AUTO_SIZER_PADDING}
                                 rowCount={rows.length}
                                 noRowsRenderer={this._noRowsRenderer}
                                 rowHeight={calculateRowHeight}
@@ -746,4 +760,18 @@ function _calculateListHeight(rows: Row[], totalRowsHeight: number) {
 
 function _calculateOptionHeight() {
     return DEFAULT_OPTION_HEIGHT;
+}
+
+function _rowWithLongestLabel(longestRow, row) {
+    if (!longestRow || !longestRow.option) {
+        return row;
+    }
+    return row.option && row.option.label.length > longestRow.option.label.length ? row : longestRow;
+}
+
+function _menuWidth(rows: Row[]): Optional<number> {
+    const row = rows.reduce(_rowWithLongestLabel, undefined);
+    return row && row.option
+        ? Math.ceil(row.option.label.length * DEFAULT_ESTIMATED_CHARACTER_WIDTH)
+        : undefined;
 }

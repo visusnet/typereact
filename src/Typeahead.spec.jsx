@@ -1071,6 +1071,19 @@ describe('Typeahead should', () => {
         expect(wrapper.state('menuOpenDirection')).toEqual('down');
     });
 
+    it('use numeric menuWidth', () => {
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={options} menuWidth={500}/>);
+        wrapper.find('input').simulate('focus');
+        expect(wrapper.find('.typeahead__options').prop('style').width).toEqual('500px');
+    });
+
+    it('use functional menuWidth', () => {
+        const calculateMenuWidth = () => 500;
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={options} menuWidth={calculateMenuWidth}/>);
+        wrapper.find('input').simulate('focus');
+        expect(wrapper.find('.typeahead__options').prop('style').width).toEqual('500px');
+    });
+
     function simulateKeys(wrapper, text) {
         const input = wrapper.find('input');
         for (let i = 0; i < text.length; i++) {
