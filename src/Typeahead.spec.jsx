@@ -250,6 +250,33 @@ describe('Typeahead should', () => {
         expect(Boolean(value1Option.prop('data-highlighted'))).toEqual(true);
     });
 
+    it('highlight second option in a filtered list when no value is set and arrow down key is pressed twice', function () {
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={options}/>);
+        wrapper.find('input').simulate('focus');
+        simulateKeys(wrapper.find('input'), 'spe');
+        wrapper.find('input').simulate('keyDown', {keyCode: KEY_DOWN});
+        wrapper.find('input').simulate('keyDown', {keyCode: KEY_DOWN});
+        const value1Option = wrapper.find('.typeahead__option[data-value="value4"]');
+        expect(Boolean(value1Option.prop('data-highlighted'))).toEqual(true);
+    });
+
+    it('highlight the right option in a filtered list when no value is set and arrow down key is pressed twice', function () {
+        const optionsForFilter = [
+            {label: 'nomatch', value: 'value1'},
+            {label: 'nomatch', value: 'value2'},
+            {label: 'match haus', value: 'value3'},
+            {label: 'nomatch', value: 'value4'},
+            {label: 'match haus 2', value: 'value5'}
+        ];
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={optionsForFilter}/>);
+        wrapper.find('input').simulate('focus');
+        simulateKeys(wrapper.find('input'), 'haus');
+        wrapper.find('input').simulate('keyDown', {keyCode: KEY_DOWN});
+        wrapper.find('input').simulate('keyDown', {keyCode: KEY_DOWN});
+        const value1Option = wrapper.find('.typeahead__option[data-value="value5"]');
+        expect(Boolean(value1Option.prop('data-highlighted'))).toEqual(true);
+    });
+
     it('highlight first option when no value is set and arrow up key is pressed', function () {
         const wrapper = mount(<Typeahead fieldName="fieldName" options={options}/>);
         wrapper.find('input').simulate('focus');

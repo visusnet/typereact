@@ -571,7 +571,7 @@ export default class Typeahead extends PureComponent<Props, State> {
             } else {
                 options.forEach((option, index) => rows.push({
                     option,
-                    index
+                    index: this._getAbsoluteIndex(option)
                 }));
             }
             return rows;
@@ -656,6 +656,7 @@ export default class Typeahead extends PureComponent<Props, State> {
                                 noRowsRenderer={this._noRowsRenderer}
                                 rowHeight={calculateRowHeight}
                                 rowRenderer={renderRow}
+                                tabIndex={null}
                                 scrollToAlignment="start"
                                 {...scrollToIndexProp}
                             />
