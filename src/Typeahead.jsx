@@ -324,7 +324,6 @@ export default class Typeahead extends PureComponent<Props, State> {
         const currentOptionIndex = this.state.highlightedIndex;
         const potentialNextOptionIndex = currentOptionIndex === undefined ? this._getFirstGroupsFirstOptionIndex()
             : currentOptionIndex + 1;
-        console.log('_getNextIndex', potentialNextOptionIndex);
         const hasNextOption = potentialNextOptionIndex < this._getFilteredOptions().length;
         return hasNextOption ? potentialNextOptionIndex : currentOptionIndex;
     };
@@ -521,7 +520,6 @@ export default class Typeahead extends PureComponent<Props, State> {
     renderOption = (option: Option, absoluteIndex: number, style: any): Node => {
         const isHighlighted = typeof this.state.highlightedIndex !== 'undefined'
             && absoluteIndex === this._relativeToAbsoluteIndex(this.state.highlightedIndex);
-        console.log('renderOPtion', option.value, 'abs', absoluteIndex, 'highl', this.state.highlightedIndex, 'hi2abs', this._relativeToAbsoluteIndex(this.state.highlightedIndex))
         return (
             <div ref={element => this.elementRefs[`option_${absoluteIndex}`] = element}
                 key={`typeahead__option__${option.value}`}
