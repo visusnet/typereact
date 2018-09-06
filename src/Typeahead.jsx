@@ -656,6 +656,7 @@ export default class Typeahead extends PureComponent<Props, State> {
                                 noRowsRenderer={this._noRowsRenderer}
                                 rowHeight={calculateRowHeight}
                                 rowRenderer={renderRow}
+                                tabIndex={null}
                                 scrollToAlignment="start"
                                 {...scrollToIndexProp}
                             />
@@ -669,7 +670,7 @@ export default class Typeahead extends PureComponent<Props, State> {
     renderClearButton(): Node {
         if (this.props.isClearable && !this.props.isDisabled && this.state.value) {
             return (
-                <button className="typeahead__clear" onClick={this._handleClearClick}/>
+                <button tabIndex={-1} className="typeahead__clear" onClick={this._handleClearClick}/>
             );
         }
     }
