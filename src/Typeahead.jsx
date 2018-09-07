@@ -306,7 +306,7 @@ export default class Typeahead extends PureComponent<Props, State> {
             this.props,
             this._isUnknownValue()
         );
-        const row = rows.find(r => r.rowIndex === highlightedRowIndex && r.hasOwnProperty('option'));
+        const row = rows.find(r => r.rowIndex === highlightedRowIndex && _isOptionRow(r));
         return row && row.option ? row.option.value : DEFAULT_VALUE;
     };
 
@@ -328,14 +328,7 @@ export default class Typeahead extends PureComponent<Props, State> {
         if (currentRowIndex === undefined) {
             potentialPreviousOptionIndex = 0;
         } else {
-            let potentialPreviousOptionRow;
-            for (let i = rows.length - 1; i >= 0; i--) {
-                const r = rows[i];
-                if (r.rowIndex < currentRowIndex && r.hasOwnProperty('option')) {
-                    potentialPreviousOptionRow = r;
-                    break;
-                }
-            }
+            const potentialPreviousOptionRow = _findLast(rows, (r: Row) => r.rowIndex < currentRowIndex && _isOptionRow(r));
             potentialPreviousOptionIndex = potentialPreviousOptionRow ? potentialPreviousOptionRow.rowIndex : currentRowIndex;
         }
         const hasPreviousOption = potentialPreviousOptionIndex >= 0;
@@ -357,7 +350,7 @@ export default class Typeahead extends PureComponent<Props, State> {
         if (currentRowIndex === undefined) {
             potentialNextRowIndex = this._getFirstGroupsFirstOptionIndex(rows);
         } else {
-            const potentialNextOptionRow = rows.find(r => r.rowIndex > currentRowIndex && r.hasOwnProperty('option'));
+            const potentialNextOptionRow = rows.find(r => r.rowIndex > currentRowIndex && _isOptionRow(r));
             potentialNextRowIndex = potentialNextOptionRow ? potentialNextOptionRow.rowIndex : currentRowIndex;
         }
 
@@ -366,7 +359,7 @@ export default class Typeahead extends PureComponent<Props, State> {
     };
 
     _getFirstGroupsFirstOptionIndex = (rows: Row[]): number => {
-        const firstOptionRow = rows.find((r: Row) => r.hasOwnProperty('option'));
+        const firstOptionRow = rows.find((r: Row) => _isOptionRow(r));
         return firstOptionRow ? firstOptionRow.rowIndex : 0;
     };
 
@@ -804,4 +797,17 @@ function _estimateMenuWidth(rows: Row[]): Optional<number> {
     return row
         ? Math.ceil(row.option.label.length * DEFAULT_ESTIMATED_CHARACTER_WIDTH)
         : undefined;
+}
+
+function _isOptionRow(row) {
+    return row.hasOwnProperty('option');
+}
+
+function _findLast<T>(array: T[], comparator: T => boolean): ?T {
+    for (let i = array.length - 1; i >= 0; i--) {
+        if (comparator(array[i])) {
+            return array[i];
+        }
+    }
+    return undefined;
 }
