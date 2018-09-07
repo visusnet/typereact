@@ -231,6 +231,14 @@ describe('Typeahead should', () => {
         expect(Boolean(value1Option.prop('data-highlighted'))).toEqual(true);
     });
 
+    it('not highlight any option when no options exist and arrow down key is pressed with groups', function () {
+        const wrapper = mount(<Typeahead fieldName="fieldName" groups={groups} options={[]}/>);
+        wrapper.find('input').simulate('focus');
+        wrapper.find('input').simulate('keyDown', {keyCode: KEY_DOWN});
+        const value1Option = wrapper.find('.typeahead__option[data-highlighted]');
+        expect(value1Option.exists()).toEqual(false);
+    });
+
     it('highlight special option when unknown value is set and arrow up key is pressed', function () {
         const wrapper = mount(<Typeahead fieldName="fieldName" options={options} allowUnknownValue={true}
             value="unknown"/>);
@@ -247,6 +255,23 @@ describe('Typeahead should', () => {
         wrapper.find('input').simulate('keyDown', {keyCode: KEY_DOWN});
         wrapper.find('input').simulate('keyDown', {keyCode: KEY_DOWN});
         const value1Option = wrapper.find('.typeahead__option[data-value="value2"]');
+        expect(Boolean(value1Option.prop('data-highlighted'))).toEqual(true);
+    });
+
+    it('highlight last option when arrow down key is pressed more often than options exist', function () {
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={options}/>);
+        wrapper.find('input').simulate('focus');
+        wrapper.find('input').simulate('keyDown', {keyCode: KEY_DOWN});
+        wrapper.find('input').simulate('keyDown', {keyCode: KEY_DOWN});
+        wrapper.find('input').simulate('keyDown', {keyCode: KEY_DOWN});
+        wrapper.find('input').simulate('keyDown', {keyCode: KEY_DOWN});
+        wrapper.find('input').simulate('keyDown', {keyCode: KEY_DOWN});
+        wrapper.find('input').simulate('keyDown', {keyCode: KEY_DOWN});
+        wrapper.find('input').simulate('keyDown', {keyCode: KEY_DOWN});
+        wrapper.find('input').simulate('keyDown', {keyCode: KEY_DOWN});
+        wrapper.find('input').simulate('keyDown', {keyCode: KEY_DOWN});
+        wrapper.find('input').simulate('keyDown', {keyCode: KEY_DOWN});
+        const value1Option = wrapper.find('.typeahead__option[data-value="value4"]');
         expect(Boolean(value1Option.prop('data-highlighted'))).toEqual(true);
     });
 

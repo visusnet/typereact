@@ -201,12 +201,12 @@ export default class Typeahead extends PureComponent<Props, State> {
     _handleInputKeyDown = (e: KeyboardEvent): void => {
         if (e.keyCode === KEY_UP) {
             this.setState({
-                highlightedRowIndex: this._getPreviousIndex()
+                highlightedRowIndex: this._getPreviousOptionRowIndex()
             });
         } else if (e.keyCode === KEY_DOWN) {
             if (this.state.isOpen) {
                 this.setState({
-                    highlightedRowIndex: this._getNextIndex()
+                    highlightedRowIndex: this._getNextOptionRowIndex()
                 });
             } else {
                 this._openIfPossible();
@@ -306,31 +306,31 @@ export default class Typeahead extends PureComponent<Props, State> {
             this.props,
             this._isUnknownValue()
         );
-        const row = rows.find(r => r.rowIndex === highlightedRowIndex && _isOptionRow(r));
-        return row && row.option ? row.option.value : DEFAULT_VALUE;
+        return _getOptionRow(rows, r => r.rowIndex === highlightedRowIndex).option.value;
     };
 
-    static _getInitialIndex = (props: Props): Optional<number> => {
-        const {options, value} = props;
-        const currentOptionIndex = options.findIndex(opt => opt.value === value);
-        return currentOptionIndex === -1 ? NOTHING_HIGHLIGHTED : currentOptionIndex;
-    };
+    static _getInitialOptionRowIndex = (props: Props): Optional<number> => {
+        const {options, groups, value} = props;
 
-    _getPreviousIndex = (): Optional<number> => {
-        const rows = this._generateRows(
-            this._getFilteredOptions(),
-            this.props.groups,
-            this.props,
-            this._isUnknownValue()
-        );
-        const currentRowIndex = this.state.highlightedRowIndex;
-        let potentialPreviousOptionIndex;
-        if (currentRowIndex === undefined) {
-            potentialPreviousOptionIndex = 0;
-        } else {
-            const potentialPreviousOptionRow = _findLast(rows, (r: Row) => r.rowIndex < currentRowIndex && _isOptionRow(r));
-            potentialPreviousOptionIndex = potentialPreviousOptionRow ? potentialPreviousOptionRow.rowIndex : currentRowIndex;
+        const isUnknownValue = !props.options.some(option => option.value === props.value);
+        if (isUnknownValue && props.allowUnknownValue) {
+            return UNKNOWN_VALUE_HIGHLIGHTED;
         }
+
+        const rows = groups
+            ? _generateGroupedRows(groups, options, props)
+            : _generateOptionRows(options);
+        const currentRow = _findOptionRow(rows, r => r.option.value === value);
+        if (currentRow) {
+            return currentRow.rowIndex;
+        }
+
+        return NOTHING_HIGHLIGHTED;
+    };
+
+    _getPreviousOptionRowIndex = (): Optional<number> => {
+        const currentRowIndex = this.state.highlightedRowIndex;
+        const potentialPreviousOptionIndex = this._getPotentialPreviousOptionRowIndex();
         const hasPreviousOption = potentialPreviousOptionIndex >= 0;
         if (this.props.allowUnknownValue && !hasPreviousOption && this._isUnknownValue()) {
             return UNKNOWN_VALUE_HIGHLIGHTED;
@@ -338,28 +338,38 @@ export default class Typeahead extends PureComponent<Props, State> {
         return hasPreviousOption ? potentialPreviousOptionIndex : currentRowIndex;
     };
 
-    _getNextIndex = (): Optional<number> => {
+    _getPotentialPreviousOptionRowIndex = (): number => {
+        const currentRowIndex = this.state.highlightedRowIndex;
+        if (currentRowIndex === undefined) {
+            return 0;
+        }
         const rows = this._generateRows(
             this._getFilteredOptions(),
             this.props.groups,
             this.props,
             this._isUnknownValue()
         );
-        const currentRowIndex = this.state.highlightedRowIndex;
-        let potentialNextRowIndex;
-        if (currentRowIndex === undefined) {
-            potentialNextRowIndex = this._getFirstGroupsFirstOptionIndex(rows);
-        } else {
-            const potentialNextOptionRow = rows.find(r => r.rowIndex > currentRowIndex && _isOptionRow(r));
-            potentialNextRowIndex = potentialNextOptionRow ? potentialNextOptionRow.rowIndex : currentRowIndex;
-        }
+        const potentialPreviousOptionRow = _findLast(rows, r => r.rowIndex < currentRowIndex && _isOptionRow(r));
+        return potentialPreviousOptionRow ? potentialPreviousOptionRow.rowIndex : -1;
+    };
 
-        const hasNextOption = potentialNextRowIndex < rows.length;
-        return hasNextOption ? potentialNextRowIndex : currentRowIndex;
+    _getNextOptionRowIndex = (): Optional<number> => {
+        const currentRowIndex = this.state.highlightedRowIndex;
+        const rows = this._generateRows(
+            this._getFilteredOptions(),
+            this.props.groups,
+            this.props,
+            this._isUnknownValue()
+        );
+        if (currentRowIndex === undefined) {
+            return this._getFirstGroupsFirstOptionIndex(rows);
+        }
+        const potentialNextOptionRow = _findOptionRow(rows, r => r.rowIndex > currentRowIndex);
+        return potentialNextOptionRow ? potentialNextOptionRow.rowIndex : currentRowIndex;
     };
 
     _getFirstGroupsFirstOptionIndex = (rows: Row[]): number => {
-        const firstOptionRow = rows.find((r: Row) => _isOptionRow(r));
+        const firstOptionRow = _findOptionRow(rows, _thatExist);
         return firstOptionRow ? firstOptionRow.rowIndex : 0;
     };
 
@@ -430,7 +440,7 @@ export default class Typeahead extends PureComponent<Props, State> {
         const {options} = props;
         if (typeof prevState.props === 'undefined' || prevState.props !== props) {
             const shouldAutoSelectSingleOption = props.autoSelectSingleOption && options.length === 1;
-            const highlightedRowIndex = shouldAutoSelectSingleOption ? 0 : Typeahead._getInitialIndex(props);
+            const highlightedRowIndex = shouldAutoSelectSingleOption ? 0 : Typeahead._getInitialOptionRowIndex(props);
             const value = shouldAutoSelectSingleOption ? options[0].value : props.value;
             const typedLabel = Typeahead._getLabelByValue(value, props.options, props.allowUnknownValue);
             return {
@@ -445,14 +455,6 @@ export default class Typeahead extends PureComponent<Props, State> {
 
     _isUnknownValue = (): boolean => this._typedLabelHasText() &&
         !this._getFilteredOptions().some(option => option.label === this.state.typedLabel);
-
-    _getAbsoluteIndex = (option: Option): number => this._getSortedOptions(this.props)
-        .findIndex(opt => opt.value === option.value);
-
-    _relativeToAbsoluteIndex = (relativeIndex: number): number => {
-        const highlightedOption = this._getFilteredOptions()[relativeIndex];
-        return this._getSortedOptions(this.props).indexOf(highlightedOption);
-    };
 
     _fireOnChangeIfSingleOptionWasUpdated = (prevProps: Props) => {
         const {autoSelectSingleOption, options} = this.props;
@@ -575,7 +577,7 @@ export default class Typeahead extends PureComponent<Props, State> {
 
     _generateRows = memoize(
         (options: Option[], groups: Optional<Group[]>, props: Props, isUnknownValue: boolean): Row[] => {
-            const rows: Row[] = [];
+            let rows: Row[] = [];
             if (props.allowUnknownValue && isUnknownValue) {
                 rows.push({
                     option: {
@@ -585,29 +587,12 @@ export default class Typeahead extends PureComponent<Props, State> {
                     rowIndex: UNKNOWN_VALUE_HIGHLIGHTED
                 });
             }
-            if (groups) {
-                let rowIndex = 0;
-                groups.forEach((group) => {
-                    const groupOptions = options.filter(option => option.group === group.value);
-                    if (groupOptions.length > 0 || props.renderEmptyGroups) {
-                        rows.push({group, rowIndex});
-                        rowIndex++;
-                    }
-                    groupOptions.forEach((option) => {
-                        rows.push({
-                            option,
-                            rowIndex
-                        });
-                        rowIndex++;
-                    });
-                });
-            } else {
-                options.forEach((option, rowIndex) => rows.push({
-                    option,
-                    rowIndex: rowIndex
-                }));
-            }
-            //console.log(rows)
+            rows = [
+                ...rows,
+                ...(groups
+                    ? _generateGroupedRows(groups, options, props)
+                    : _generateOptionRows(options))
+            ];
             return rows;
         }
     );
@@ -619,7 +604,7 @@ export default class Typeahead extends PureComponent<Props, State> {
                 : props.calculateOptionHeight(row.option, row.rowIndex)), 0);
         });
 
-    _createRenderRow = (rows: Row[]) => ({index: rowIndex, style}: {index: number, style: any}) => {
+    _createRenderRow = (rows: Row[]) => ({index: rowIndex, style}: { index: number, style: any }) => {
         const row = rows[rowIndex];
         if (row.option) {
             return this.renderOption(row.option, row.rowIndex, style);
@@ -627,7 +612,7 @@ export default class Typeahead extends PureComponent<Props, State> {
         return this.renderGroup(row.group, style);
     };
 
-    _createCalculateRowHeight = (rows: Row[]) => ({index: rowIndex}: {index: number}) => {
+    _createCalculateRowHeight = (rows: Row[]) => ({index: rowIndex}: { index: number }) => {
         if (rows[rowIndex].group) {
             return this.props.calculateGroupHeight(rows[rowIndex].group, rowIndex);
         }
@@ -636,7 +621,7 @@ export default class Typeahead extends PureComponent<Props, State> {
 
     _createScrollToIndexProp = () => typeof this.state.highlightedRowIndex === 'undefined'
         ? {}
-        : {scrollToIndex: this._relativeToAbsoluteIndex(this.state.highlightedRowIndex)};
+        : {scrollToIndex: this.state.highlightedRowIndex};
 
     _noRowsRenderer = () => this.renderNoOptionsMessage();
 
@@ -810,4 +795,44 @@ function _findLast<T>(array: T[], comparator: T => boolean): ?T {
         }
     }
     return undefined;
+}
+
+function _thatExist() {
+    return true;
+}
+
+function _findOptionRow(rows: Row[], comparator: OptionRow => boolean): ?OptionRow {
+    const row = rows.find((r: any) => _isOptionRow(r) && comparator(r));
+    return ((row: any): ?OptionRow);
+}
+
+function _getOptionRow(rows: Row[], comparator: OptionRow => boolean): OptionRow {
+    return ((_findOptionRow(rows, comparator): any): OptionRow);
+}
+
+function _generateGroupedRows(groups: Group[], options: Option[], props: Props) {
+    const rows = [];
+    let rowIndex = 0;
+    groups.forEach((group: Group) => {
+        const groupOptions = options.filter(option => option.group === group.value);
+        if (groupOptions.length > 0 || props.renderEmptyGroups) {
+            rows.push({group, rowIndex});
+            rowIndex++;
+        }
+        groupOptions.forEach((option: Option) => {
+            rows.push({
+                option,
+                rowIndex
+            });
+            rowIndex++;
+        });
+    });
+    return rows;
+}
+
+function _generateOptionRows(options: Option[]) {
+    return options.map((option: Option, rowIndex: number) => ({
+        option,
+        rowIndex: rowIndex
+    }));
 }
