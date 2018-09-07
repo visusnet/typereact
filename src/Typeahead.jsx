@@ -44,12 +44,12 @@ type WrappedOption = {
 
 type OptionRow = {|
     option: Option,
-    index: number
+    rowIndex: number
 |};
 
 type GroupRow = {|
     group: Group,
-    index: number
+    rowIndex: number
 |};
 
 type Row = OptionRow | GroupRow;
@@ -79,7 +79,7 @@ type Props = {
 };
 
 type State = {
-    highlightedIndex: Optional<number>,
+    highlightedRowIndex: Optional<number>,
     isOpen: boolean,
     typedLabel: string,
     value: ?any,
@@ -91,7 +91,7 @@ const MENU_OPEN_DIRECTION_DOWN = 'down';
 const MENU_OPEN_DIRECTION_UP = 'up';
 
 const INITIAL_STATE: State = {
-    highlightedIndex: NOTHING_HIGHLIGHTED,
+    highlightedRowIndex: NOTHING_HIGHLIGHTED,
     isOpen: false,
     typedLabel: '',
     value: undefined,
@@ -187,7 +187,7 @@ export default class Typeahead extends PureComponent<Props, State> {
             typedLabel: label
         }, () => {
             this.setState({
-                highlightedIndex: this._getHighlightedIndexByTypedLabel()
+                highlightedRowIndex: this._gethighlightedRowIndexByTypedLabel()
             });
 
             if (label === '' && this.props.isClearable) {
@@ -201,12 +201,12 @@ export default class Typeahead extends PureComponent<Props, State> {
     _handleInputKeyDown = (e: KeyboardEvent): void => {
         if (e.keyCode === KEY_UP) {
             this.setState({
-                highlightedIndex: this._getPreviousIndex()
+                highlightedRowIndex: this._getPreviousIndex()
             });
         } else if (e.keyCode === KEY_DOWN) {
             if (this.state.isOpen) {
                 this.setState({
-                    highlightedIndex: this._getNextIndex()
+                    highlightedRowIndex: this._getNextIndex()
                 });
             } else {
                 this._openIfPossible();
@@ -226,12 +226,12 @@ export default class Typeahead extends PureComponent<Props, State> {
         this._clearValue();
     };
 
-    _createHandleOptionMouseDown = (value: any, highlightedIndex: number): Function => (e: MouseEvent): void => {
+    _createHandleOptionMouseDown = (value: any, highlightedRowIndex: number): Function => (e: MouseEvent): void => {
         e.stopPropagation();
         e.preventDefault();
         const previousValue = this.state.value;
         this.setState({
-            highlightedIndex,
+            highlightedRowIndex,
             isOpen: false,
             typedLabel: Typeahead._getLabelByValue(value, this.props.options, this.props.allowUnknownValue),
             value
@@ -250,12 +250,12 @@ export default class Typeahead extends PureComponent<Props, State> {
         if (!this.state.isOpen) {
             this.setState({
                 isOpen: true,
-                highlightedIndex: this._getHighlightedIndexByTypedLabel()
+                highlightedRowIndex: this._gethighlightedRowIndexByTypedLabel()
             });
         }
     };
 
-    _getHighlightedIndexByTypedLabel = (): number | typeof undefined => {
+    _gethighlightedRowIndexByTypedLabel = (): number | typeof undefined => {
         const optionIndex = this._getFilteredOptions().findIndex(this._byTypedLabel);
         const typedLabelFoundInOptions = optionIndex !== -1;
         return typedLabelFoundInOptions ? optionIndex : NOTHING_HIGHLIGHTED;
@@ -272,7 +272,7 @@ export default class Typeahead extends PureComponent<Props, State> {
                 : valueOfHighlightedOption;
             this.setState({
                 isOpen: false,
-                highlightedIndex: undefined,
+                highlightedRowIndex: undefined,
                 value: nextValue,
                 typedLabel: Typeahead._getLabelByValue(nextValue, this.props.options, this.props.allowUnknownValue)
             }, afterValueUpdated);
@@ -296,12 +296,18 @@ export default class Typeahead extends PureComponent<Props, State> {
     };
 
     _getValueOfHighlightedOption = (): any => {
-        const highlightedIndex = this.state.highlightedIndex;
-        if (typeof highlightedIndex === 'undefined') {
+        const highlightedRowIndex = this.state.highlightedRowIndex;
+        if (typeof highlightedRowIndex === 'undefined') {
             return DEFAULT_VALUE;
         }
-        const filteredOptions = this._getFilteredOptions();
-        return filteredOptions[highlightedIndex].value;
+        const rows = this._generateRows(
+            this._getFilteredOptions(),
+            this.props.groups,
+            this.props,
+            this._isUnknownValue()
+        );
+        const row = rows.find(r => r.rowIndex === highlightedRowIndex && r.hasOwnProperty('option'));
+        return row && row.option ? row.option.value : DEFAULT_VALUE;
     };
 
     static _getInitialIndex = (props: Props): Optional<number> => {
@@ -311,28 +317,57 @@ export default class Typeahead extends PureComponent<Props, State> {
     };
 
     _getPreviousIndex = (): Optional<number> => {
-        const currentOptionIndex = this.state.highlightedIndex;
-        const potentialPreviousOptionIndex = currentOptionIndex === undefined ? 0 : currentOptionIndex - 1;
+        const rows = this._generateRows(
+            this._getFilteredOptions(),
+            this.props.groups,
+            this.props,
+            this._isUnknownValue()
+        );
+        const currentRowIndex = this.state.highlightedRowIndex;
+        let potentialPreviousOptionIndex;
+        if (currentRowIndex === undefined) {
+            potentialPreviousOptionIndex = 0;
+        } else {
+            let potentialPreviousOptionRow;
+            for (let i = rows.length - 1; i >= 0; i--) {
+                const r = rows[i];
+                if (r.rowIndex < currentRowIndex && r.hasOwnProperty('option')) {
+                    potentialPreviousOptionRow = r;
+                    break;
+                }
+            }
+            potentialPreviousOptionIndex = potentialPreviousOptionRow ? potentialPreviousOptionRow.rowIndex : currentRowIndex;
+        }
         const hasPreviousOption = potentialPreviousOptionIndex >= 0;
         if (this.props.allowUnknownValue && !hasPreviousOption && this._isUnknownValue()) {
             return UNKNOWN_VALUE_HIGHLIGHTED;
         }
-        return hasPreviousOption ? potentialPreviousOptionIndex : currentOptionIndex;
+        return hasPreviousOption ? potentialPreviousOptionIndex : currentRowIndex;
     };
 
     _getNextIndex = (): Optional<number> => {
-        const currentOptionIndex = this.state.highlightedIndex;
-        const potentialNextOptionIndex = currentOptionIndex === undefined ? this._getFirstGroupsFirstOptionIndex()
-            : currentOptionIndex + 1;
-        const hasNextOption = potentialNextOptionIndex < this._getFilteredOptions().length;
-        return hasNextOption ? potentialNextOptionIndex : currentOptionIndex;
+        const rows = this._generateRows(
+            this._getFilteredOptions(),
+            this.props.groups,
+            this.props,
+            this._isUnknownValue()
+        );
+        const currentRowIndex = this.state.highlightedRowIndex;
+        let potentialNextRowIndex;
+        if (currentRowIndex === undefined) {
+            potentialNextRowIndex = this._getFirstGroupsFirstOptionIndex(rows);
+        } else {
+            const potentialNextOptionRow = rows.find(r => r.rowIndex > currentRowIndex && r.hasOwnProperty('option'));
+            potentialNextRowIndex = potentialNextOptionRow ? potentialNextOptionRow.rowIndex : currentRowIndex;
+        }
+
+        const hasNextOption = potentialNextRowIndex < rows.length;
+        return hasNextOption ? potentialNextRowIndex : currentRowIndex;
     };
 
-    _getFirstGroupsFirstOptionIndex = (): number => {
-        const groups = this.props.groups;
-        return typeof groups !== 'undefined' && Array.isArray(groups) && groups.length > 0
-            ? this._getSortedOptions(this.props).findIndex(option => option.group === groups[0].value)
-            : 0;
+    _getFirstGroupsFirstOptionIndex = (rows: Row[]): number => {
+        const firstOptionRow = rows.find((r: Row) => r.hasOwnProperty('option'));
+        return firstOptionRow ? firstOptionRow.rowIndex : 0;
     };
 
     _typedLabelHasText = (): boolean => Boolean(this.state.typedLabel);
@@ -374,7 +409,7 @@ export default class Typeahead extends PureComponent<Props, State> {
             value: DEFAULT_VALUE,
             typedLabel: DEFAULT_LABEL,
             isOpen: false,
-            highlightedIndex: undefined
+            highlightedRowIndex: undefined
         }, this._afterValueChanged(this.state.value));
     };
 
@@ -402,11 +437,11 @@ export default class Typeahead extends PureComponent<Props, State> {
         const {options} = props;
         if (typeof prevState.props === 'undefined' || prevState.props !== props) {
             const shouldAutoSelectSingleOption = props.autoSelectSingleOption && options.length === 1;
-            const highlightedIndex = shouldAutoSelectSingleOption ? 0 : Typeahead._getInitialIndex(props);
+            const highlightedRowIndex = shouldAutoSelectSingleOption ? 0 : Typeahead._getInitialIndex(props);
             const value = shouldAutoSelectSingleOption ? options[0].value : props.value;
             const typedLabel = Typeahead._getLabelByValue(value, props.options, props.allowUnknownValue);
             return {
-                highlightedIndex,
+                highlightedRowIndex,
                 value,
                 typedLabel,
                 props
@@ -476,7 +511,7 @@ export default class Typeahead extends PureComponent<Props, State> {
         if (autoSelectSingleOption && options.length === 1) {
             const valueOfSingleOption = options[0].value;
             this.setState({
-                highlightedIndex: 0,
+                highlightedRowIndex: 0,
                 value: valueOfSingleOption,
                 typedLabel: Typeahead._getLabelByValue(valueOfSingleOption, this.props.options,
                     this.props.allowUnknownValue)
@@ -517,21 +552,21 @@ export default class Typeahead extends PureComponent<Props, State> {
         return (<span className="typeahead__option__new_option"> (+) </span>);
     }
 
-    renderOption = (option: Option, absoluteIndex: number, style: any): Node => {
-        const isHighlighted = typeof this.state.highlightedIndex !== 'undefined'
-            && absoluteIndex === this._relativeToAbsoluteIndex(this.state.highlightedIndex);
+    renderOption = (option: Option, rowIndex: number, style: any): Node => {
+        const isHighlighted = typeof this.state.highlightedRowIndex !== 'undefined'
+            && rowIndex === this.state.highlightedRowIndex;
         return (
-            <div ref={element => this.elementRefs[`option_${absoluteIndex}`] = element}
+            <div ref={element => this.elementRefs[`option_${rowIndex}`] = element}
                 key={`typeahead__option__${option.value}`}
                 className="typeahead__option"
-                data-index={absoluteIndex}
+                data-index={rowIndex}
                 data-value={option.value}
                 data-highlighted={isHighlighted}
                 data-group={option.group}
                 style={style}
-                onMouseDown={this._createHandleOptionMouseDown(option.value, absoluteIndex)}>
+                onMouseDown={this._createHandleOptionMouseDown(option.value, rowIndex)}>
                 {option.label}
-                {absoluteIndex === UNKNOWN_VALUE_HIGHLIGHTED ? this.renderNewOptionMarker() : null}
+                {rowIndex === UNKNOWN_VALUE_HIGHLIGHTED ? this.renderNewOptionMarker() : null}
             </div>
         );
     };
@@ -547,33 +582,39 @@ export default class Typeahead extends PureComponent<Props, State> {
 
     _generateRows = memoize(
         (options: Option[], groups: Optional<Group[]>, props: Props, isUnknownValue: boolean): Row[] => {
-            const rows = [];
+            const rows: Row[] = [];
             if (props.allowUnknownValue && isUnknownValue) {
                 rows.push({
                     option: {
                         label: this.state.typedLabel,
                         value: this.state.typedLabel
                     },
-                    index: UNKNOWN_VALUE_HIGHLIGHTED
+                    rowIndex: UNKNOWN_VALUE_HIGHLIGHTED
                 });
             }
             if (groups) {
-                groups.forEach((group, index) => {
+                let rowIndex = 0;
+                groups.forEach((group) => {
                     const groupOptions = options.filter(option => option.group === group.value);
                     if (groupOptions.length > 0 || props.renderEmptyGroups) {
-                        rows.push({group, index});
+                        rows.push({group, rowIndex});
+                        rowIndex++;
                     }
-                    groupOptions.forEach(option => rows.push({
-                        option,
-                        index: this._getAbsoluteIndex(option)
-                    }));
+                    groupOptions.forEach((option) => {
+                        rows.push({
+                            option,
+                            rowIndex
+                        });
+                        rowIndex++;
+                    });
                 });
             } else {
-                options.forEach((option, index) => rows.push({
+                options.forEach((option, rowIndex) => rows.push({
                     option,
-                    index: this._getAbsoluteIndex(option)
+                    rowIndex: rowIndex
                 }));
             }
+            //console.log(rows)
             return rows;
         }
     );
@@ -581,28 +622,28 @@ export default class Typeahead extends PureComponent<Props, State> {
     _calculateTotalRowHeights = memoize(
         (rows: Row[], props: Props) => {
             return rows.reduce((totalRowsHeight, row) => totalRowsHeight + (row.group
-                ? props.calculateGroupHeight(row.group, row.index)
-                : props.calculateOptionHeight(row.option, row.index)), 0);
+                ? props.calculateGroupHeight(row.group, row.rowIndex)
+                : props.calculateOptionHeight(row.option, row.rowIndex)), 0);
         });
 
-    _createRenderRow = (rows: Row[]) => ({index, style}: {index: number, style: any}) => {
-        const row = rows[index];
+    _createRenderRow = (rows: Row[]) => ({index: rowIndex, style}: {index: number, style: any}) => {
+        const row = rows[rowIndex];
         if (row.option) {
-            return this.renderOption(row.option, row.index, style);
+            return this.renderOption(row.option, row.rowIndex, style);
         }
         return this.renderGroup(row.group, style);
     };
 
-    _createCalculateRowHeight = (rows: Row[]) => ({index}: {index: number}) => {
-        if (rows[index].group) {
-            return this.props.calculateGroupHeight(rows[index].group, index);
+    _createCalculateRowHeight = (rows: Row[]) => ({index: rowIndex}: {index: number}) => {
+        if (rows[rowIndex].group) {
+            return this.props.calculateGroupHeight(rows[rowIndex].group, rowIndex);
         }
-        return this.props.calculateOptionHeight(rows[index].option, index);
+        return this.props.calculateOptionHeight(rows[rowIndex].option, rowIndex);
     };
 
-    _createScrollToIndexProp = () => typeof this.state.highlightedIndex === 'undefined'
+    _createScrollToIndexProp = () => typeof this.state.highlightedRowIndex === 'undefined'
         ? {}
-        : {scrollToIndex: this._relativeToAbsoluteIndex(this.state.highlightedIndex)};
+        : {scrollToIndex: this._relativeToAbsoluteIndex(this.state.highlightedRowIndex)};
 
     _noRowsRenderer = () => this.renderNoOptionsMessage();
 
@@ -732,8 +773,8 @@ function _compareOptions(groups: Group[]): (WrappedOption, WrappedOption) => num
     };
 }
 
-function _calculateGroupHeight(group: Group, index: number) {
-    return index > 0
+function _calculateGroupHeight(group: Group, rowIndex: number) {
+    return rowIndex > 0
         ? DEFAULT_OPTION_HEIGHT + DEFAULT_GROUP_PADDING
         : DEFAULT_OPTION_HEIGHT;
 }
