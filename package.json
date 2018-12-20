@@ -15,7 +15,7 @@
     "dom-scroll-into-view": "^1.2.1",
     "memoize-one": "^4.0.0",
     "prop-types": "^15.6.0",
-    "react": "16.6.3",
+    "react": "16.7.0",
     "react-dom": "16.6.3",
     "react-virtualized": "^9.20.1"
   },
