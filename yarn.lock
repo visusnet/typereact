@@ -4151,10 +4151,10 @@ mem@^1.1.0:
   dependencies:
     mimic-fn "^1.0.0"
 
-memoize-one@^4.0.0:
-  version "4.0.0"
-  resolved "https://registry.yarnpkg.com/memoize-one/-/memoize-one-4.0.0.tgz#fc5e2f1427a216676a62ec652cf7398cfad123db"
-  integrity sha512-wdpOJ4XBejprGn/xhd1i2XR8Dv1A25FJeIvR7syQhQlz9eXsv+06llcvcmBxlWVGv4C73QBsWA8kxvZozzNwiQ==
+memoize-one@^5.0.3:
+  version "5.0.3"
+  resolved "https://registry.yarnpkg.com/memoize-one/-/memoize-one-5.0.3.tgz#2f2ec6f21df48f41caa9f5e873b3dd09650d1d38"
+  integrity sha512-hSFNx1nYJZ1fUmhBa1ZNI5ZEKsWGks6yp3yX0v2hHOF7D2VJw+fRkzkoA4djB5itv+Nk0piLOelgiPPKIVBBqQ==
 
 meow@^3.7.0:
   version "3.7.0"
