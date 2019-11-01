@@ -2548,10 +2548,10 @@ flat-cache@^1.2.1:
     graceful-fs "^4.1.2"
     write "^0.2.1"
 
-flow-bin@^0.81.0:
-  version "0.81.0"
-  resolved "https://registry.yarnpkg.com/flow-bin/-/flow-bin-0.81.0.tgz#7f0a733dce1dad3cb1447c692639292dc3d60bf5"
-  integrity sha512-5e8oL3/5rm3G0Eet3yDCne2R/TLo5Fkn+Z5MtHd4wtz+1miLC35Sgo8XvnbTmiZ9epdTZ1q6GLmJWYh7tUlfGg==
+flow-bin@^0.111.1:
+  version "0.111.1"
+  resolved "https://registry.yarnpkg.com/flow-bin/-/flow-bin-0.111.1.tgz#bfc1ff91927d0500aa869b0b3a48dd4b060c15c0"
+  integrity sha512-fOFFy4rsvV4zYXUqpNY2bChpzEMYbmumO6DlbcpndbJIHY3W8+UzyiWb8+iRDf2ME1YJgTIvKSJCzHpQ40OBOQ==
 
 for-in@^1.0.1, for-in@^1.0.2:
   version "1.0.2"
