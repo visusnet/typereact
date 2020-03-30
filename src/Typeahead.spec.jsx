@@ -849,6 +849,25 @@ describe('Typeahead should', () => {
         expect(group2.exists()).toBe(true);
     });
 
+    it('select single option when exactly searching for an option in a grouped list', () => {
+        const singleGroup = [
+            {label: 'Group 1', value: 'group1'}
+        ];
+        const optionsWithGroups = [
+            {label: 'label1', value: 'value1', group: 'group1'},
+            {label: 'label2', value: 'value2', group: 'group1'}
+        ];
+        const wrapper = mount(<Typeahead fieldName="fieldName" options={optionsWithGroups} groups={singleGroup}/>);
+        wrapper.find('input').simulate('focus');
+        simulateKeys(wrapper.find('input'), 'label2');
+        const value2Option = wrapper.find('.typeahead__option[data-value="value2"]');
+        expect(value2Option.exists()).toBe(true);
+        expect(value2Option.prop('data-group')).toEqual('group1');
+        expect(Boolean(value2Option.prop('data-highlighted'))).toEqual(true);
+        wrapper.find('input').simulate('blur');
+        expect(wrapper.state('value')).toEqual('value2');
+    });
+
     it('render options of a group when searching for a group label', () => {
         const wrapper = mount(<Typeahead fieldName="fieldName" options={optionsWithGroups} groups={groups}/>);
         wrapper.find('input').simulate('focus');
