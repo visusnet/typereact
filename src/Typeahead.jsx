@@ -186,8 +186,9 @@ export default class Typeahead extends PureComponent<Props, State> {
         this.setState({
             typedLabel: label
         }, () => {
+            const highlightedRowIndex = this._gethighlightedRowIndexByTypedLabel();
             this.setState({
-                highlightedRowIndex: this._gethighlightedRowIndexByTypedLabel()
+                highlightedRowIndex: highlightedRowIndex
             });
 
             if (label === '' && this.props.isClearable) {
@@ -256,9 +257,15 @@ export default class Typeahead extends PureComponent<Props, State> {
     };
 
     _gethighlightedRowIndexByTypedLabel = (): number | typeof undefined => {
-        const optionIndex = this._getFilteredOptions().findIndex(this._byTypedLabel);
-        const typedLabelFoundInOptions = optionIndex !== -1;
-        return typedLabelFoundInOptions ? optionIndex : NOTHING_HIGHLIGHTED;
+        const rows = this._generateRows(
+            this._getFilteredOptions(),
+            this.props.groups,
+            this.props,
+            this._isUnknownValue()
+        );
+        // $FlowFixMe Flow does not recognize that filter narrowed down the list to only OptionRows
+        const foundRow = rows.filter(_isOptionRow).find(this._rowByTypedLabel);
+        return foundRow ? foundRow.rowIndex : NOTHING_HIGHLIGHTED;
     };
 
     _updateValue = (afterValueUpdated: Function): void => {
@@ -377,6 +384,9 @@ export default class Typeahead extends PureComponent<Props, State> {
 
     _byTypedLabel = (option: Option | Group) => this._typedLabelHasText() &&
         option.label.toLowerCase().includes(this.state.typedLabel.toLowerCase());
+
+    _rowByTypedLabel = (row: OptionRow) => this._typedLabelHasText() &&
+        row.option.label.toLowerCase().includes(this.state.typedLabel.toLowerCase());
 
     _byGroupAndTypedLabel = (option: Option) => {
         if (this.props.groups !== undefined) {
@@ -636,8 +646,8 @@ export default class Typeahead extends PureComponent<Props, State> {
         return this.props.menuWidth
             ? this.props.menuWidth
             : this.props.estimateMenuWidth
-                ? this._estimateMenuWidth(this.props.estimateMenuWidth, rows)
-                : undefined;
+                   ? this._estimateMenuWidth(this.props.estimateMenuWidth, rows)
+                   : undefined;
     };
 
     renderMenu(): Node {
@@ -784,7 +794,7 @@ function _estimateMenuWidth(rows: Row[]): Optional<number> {
         : undefined;
 }
 
-function _isOptionRow(row) {
+function _isOptionRow(row: Row): boolean {
     return row.hasOwnProperty('option');
 }
 
